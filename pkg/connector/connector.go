@@ -18,7 +18,7 @@ type SnipeIt struct {
 // ResourceSyncers returns a ResourceSyncer for each resource type that should be synced from the upstream service.
 func (d *SnipeIt) ResourceSyncers(ctx context.Context) []connectorbuilder.ResourceSyncer {
 	return []connectorbuilder.ResourceSyncer{
-		newUserBuilder(),
+		newUserBuilder(d.client),
 	}
 }
 
@@ -31,8 +31,8 @@ func (d *SnipeIt) Asset(ctx context.Context, asset *v2.AssetRef) (string, io.Rea
 // Metadata returns metadata about the connector.
 func (d *SnipeIt) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error) {
 	return &v2.ConnectorMetadata{
-		DisplayName: "My Baton Connector",
-		Description: "The template implementation of a baton connector",
+		DisplayName: "Snipe-IT",
+		Description: "Connector syncing Snipe-IT users and their groups to Baton.",
 	}, nil
 }
 
