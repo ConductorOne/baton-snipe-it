@@ -19,6 +19,7 @@ type SnipeIt struct {
 func (d *SnipeIt) ResourceSyncers(ctx context.Context) []connectorbuilder.ResourceSyncer {
 	return []connectorbuilder.ResourceSyncer{
 		newUserBuilder(d.client),
+		newGroupBuilder(d.client),
 	}
 }
 

@@ -17,6 +17,14 @@ var resourceTypeUser = &v2.ResourceType{
 	DisplayName: "User",
 	Description: "A user in Snipe-IT",
 	Traits:      []v2.ResourceType_Trait{v2.ResourceType_TRAIT_USER},
+	Annotations: getResourceTypeAnnotation(),
+}
+
+func getResourceTypeAnnotation() annotations.Annotations {
+	annotations := annotations.Annotations{}
+	annotations.Update(&v2.SkipEntitlementsAndGrants{})
+
+	return annotations
 }
 
 type userResourceType struct {
@@ -80,8 +88,6 @@ func (o *userResourceType) List(ctx context.Context, _ *v2.ResourceId, pt *pagin
 		if err != nil {
 			return nil, "", nil, err
 		}
-
-		fmt.Println("resource", resource)
 
 		resources = append(resources, resource)
 	}
