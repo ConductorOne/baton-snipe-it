@@ -17,6 +17,7 @@ type (
 		EmployeeNumber string         `json:"employee_num"`
 		Activated      bool           `json:"activated"`
 		Groups         GroupsResponse `json:"groups"`
+		Permissions    Permissions    `json:"permissions"`
 	}
 
 	UsersResponse struct {

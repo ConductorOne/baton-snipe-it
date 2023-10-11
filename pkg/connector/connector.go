@@ -20,6 +20,7 @@ func (d *SnipeIt) ResourceSyncers(ctx context.Context) []connectorbuilder.Resour
 	return []connectorbuilder.ResourceSyncer{
 		newUserBuilder(d.client),
 		newGroupBuilder(d.client),
+		newRoleBuilder(d.client),
 	}
 }
 
