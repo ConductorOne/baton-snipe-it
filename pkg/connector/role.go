@@ -155,7 +155,7 @@ func composePermissionEntitlementName(permission string) (string, error) {
 	return fmt.Sprintf("%s %s", action, entity), nil
 }
 
-func parsePermission(permission string) (entity string, action string, err error) {
+func parsePermission(permission string) (string, string, error) {
 	parts := strings.Split(permission, ".")
 	if len(parts) < 2 {
 		return "", "", fmt.Errorf("invalid permission: %s", permission)
@@ -215,6 +215,7 @@ func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pa
 		}
 
 		for _, group := range groups.Rows {
+			group := group
 			groupResource, err := groupResource(ctx, &group)
 			if err != nil {
 				return nil, "", nil, wrapError(err, "Failed to get group resource")
@@ -235,6 +236,7 @@ func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pa
 	}
 
 	for _, user := range users.Rows {
+		user := user
 		userResource, err := userResource(ctx, &user)
 		if err != nil {
 			return nil, "", nil, wrapError(err, "Failed to get user resource")
