@@ -3,7 +3,6 @@ package connector
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strings"
 
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
@@ -165,11 +164,11 @@ func parsePermission(permission string) (string, string, error) {
 }
 
 func isRole(input string) bool {
-	return slices.Contains(rolesLowerCase, strings.ToLower(input))
+	return contains(rolesLowerCase, strings.ToLower(input))
 }
 
 func isAdminRole(role string) bool {
-	return slices.Contains(adminRolesLowerCase, strings.ToLower(role))
+	return contains(adminRolesLowerCase, strings.ToLower(role))
 }
 
 func (r *roleResourceType) getAppointedEntitlement(resource *v2.Resource) []*v2.Entitlement {
@@ -289,7 +288,7 @@ func (r *roleResourceType) getGrantsFromPermissions(permissions snipeit.Permissi
 func grantAdminRole(permissions snipeit.Permissions, roleResource *v2.Resource, resource *v2.Resource) []*v2.Grant {
 	var rv []*v2.Grant
 
-	if isGranted, exists := permissions[roleResource.Id.Resource]; exists && isGranted == snipeit.Granted {
+	if isGranted, exists := permissions[strings.ToLower(roleResource.Id.Resource)]; exists && isGranted == snipeit.Granted {
 		grant := grant.NewGrant(roleResource, appointedEntitlement, resource.Id)
 		rv = append(rv, grant)
 	}

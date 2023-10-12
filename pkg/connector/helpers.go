@@ -13,3 +13,12 @@ func Map[T, V any](ts []T, fn func(T) V) []V {
 	}
 	return result
 }
+
+func contains(array []string, value string) bool {
+	for _, v := range array {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
