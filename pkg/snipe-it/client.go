@@ -1,8 +1,10 @@
 package snipeit
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 )
 
@@ -22,8 +24,18 @@ func New(baseUrl string, accessToken string, httpClient *http.Client) *Client {
 	}
 }
 
-func (c *Client) newRequestWithDefaultHeaders(ctx context.Context, method, url string) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+func (c *Client) newRequestWithDefaultHeaders(ctx context.Context, method, url string, body ...interface{}) (*http.Request, error) {
+	var buffer io.ReadWriter
+	if body != nil {
+		buffer = new(bytes.Buffer)
+		err := json.NewEncoder(buffer).Encode(body[0])
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, url, buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +47,7 @@ func (c *Client) newRequestWithDefaultHeaders(ctx context.Context, method, url s
 	return req, nil
 }
 
-func (c *Client) do(req *http.Request, response interface{}) (*http.Response, error) {
+func (c *Client) do(req *http.Request, response ...interface{}) (*http.Response, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -45,8 +57,10 @@ func (c *Client) do(req *http.Request, response interface{}) (*http.Response, er
 		return nil, newSnipeItError(resp.StatusCode, err)
 	}
 
-	defer resp.Body.Close()
-	err = json.NewDecoder(resp.Body).Decode(response)
+	if response != nil {
+		defer resp.Body.Close()
+		err = json.NewDecoder(resp.Body).Decode(response[0])
+	}
 
 	return resp, err
 }

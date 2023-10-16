@@ -177,19 +177,19 @@ func (r *roleResourceType) getAppointedEntitlement(resource *v2.Resource) []*v2.
 	assigmentOptions := []ent.EntitlementOption{
 		ent.WithGrantableTo(resourceTypeUser),
 		ent.WithDescription(fmt.Sprintf("Appointed to %s role", resource.DisplayName)),
-		ent.WithDisplayName(fmt.Sprintf("%s role %s", resource.DisplayName, appointedEntitlement)),
+		ent.WithDisplayName(fmt.Sprintf("%s role %s", resource.DisplayName, assignedEntitlement)),
 	}
 
-	entitlement := ent.NewAssignmentEntitlement(resource, appointedEntitlement, assigmentOptions...)
+	entitlement := ent.NewAssignmentEntitlement(resource, assignedEntitlement, assigmentOptions...)
 	rv = append(rv, entitlement)
 
 	assigmentOptions = []ent.EntitlementOption{
 		ent.WithGrantableTo(resourceTypeGroup),
 		ent.WithDescription(fmt.Sprintf("Appointed to %s role", resource.DisplayName)),
-		ent.WithDisplayName(fmt.Sprintf("%s role %s", resource.DisplayName, appointedEntitlement)),
+		ent.WithDisplayName(fmt.Sprintf("%s role %s", resource.DisplayName, assignedEntitlement)),
 	}
 
-	entitlement = ent.NewAssignmentEntitlement(resource, appointedEntitlement, assigmentOptions...)
+	entitlement = ent.NewAssignmentEntitlement(resource, assignedEntitlement, assigmentOptions...)
 	rv = append(rv, entitlement)
 
 	return rv
@@ -289,7 +289,7 @@ func grantAdminRole(permissions snipeit.Permissions, roleResource *v2.Resource, 
 	var rv []*v2.Grant
 
 	if isGranted, exists := permissions[strings.ToLower(roleResource.Id.Resource)]; exists && isGranted == snipeit.Granted {
-		grant := grant.NewGrant(roleResource, appointedEntitlement, resource.Id)
+		grant := grant.NewGrant(roleResource, assignedEntitlement, resource.Id)
 		rv = append(rv, grant)
 	}
 
