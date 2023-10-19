@@ -26,7 +26,7 @@ type (
 	}
 )
 
-func (c *Client) GetAllUsers(ctx context.Context, offset, limit int) (*UsersResponse, *http.Response, error) {
+func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...queryFunction) (*UsersResponse, *http.Response, error) {
 	url := fmt.Sprint(c.baseUrl, "/api/v1/users")
 
 	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodGet, url)
@@ -34,10 +34,12 @@ func (c *Client) GetAllUsers(ctx context.Context, offset, limit int) (*UsersResp
 		return nil, nil, err
 	}
 
-	addQueryParams(req, map[string]string{
-		"offset": fmt.Sprint(offset),
-		"limit":  fmt.Sprint(limit),
-	})
+	query = append(query, WithOffset(offset), WithLimit(limit))
+
+	addQueryParams(
+		req,
+		query...,
+	)
 
 	users := new(UsersResponse)
 	resp, err := c.do(req, users)

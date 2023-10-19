@@ -89,7 +89,7 @@ func (r *roleResourceType) Entitlements(ctx context.Context, resource *v2.Resour
 		}
 	}
 
-	users, _, err := r.client.GetAllUsers(ctx, offset, resourcePageSize)
+	users, _, err := r.client.GetUsers(ctx, offset, resourcePageSize)
 	if err != nil {
 		return nil, "", nil, wrapError(err, "Failed to get users")
 	}
@@ -229,7 +229,7 @@ func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pa
 		}
 	}
 
-	users, _, err := r.client.GetAllUsers(ctx, offset, resourcePageSize)
+	users, _, err := r.client.GetUsers(ctx, offset, resourcePageSize)
 	if err != nil {
 		return nil, "", nil, wrapError(err, "Failed to get users")
 	}

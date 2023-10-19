@@ -76,7 +76,7 @@ func (o *userResourceType) List(ctx context.Context, _ *v2.ResourceId, pt *pagin
 		return nil, "", nil, err
 	}
 
-	users, _, err := o.client.GetAllUsers(ctx, offset, resourcePageSize)
+	users, _, err := o.client.GetUsers(ctx, offset, resourcePageSize)
 	if err != nil {
 		return nil, "", nil, wrapError(err, "Failed to get users")
 	}

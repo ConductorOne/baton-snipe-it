@@ -50,13 +50,3 @@ func (c *Client) do(req *http.Request, response interface{}) (*http.Response, er
 
 	return resp, err
 }
-
-func addQueryParams(req *http.Request, params map[string]string) *http.Request {
-	q := req.URL.Query()
-	for key, value := range params {
-		q.Add(key, value)
-	}
-	req.URL.RawQuery = q.Encode()
-
-	return req
-}

@@ -41,7 +41,7 @@ func (d *SnipeIt) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error) {
 // Validate is called to ensure that the connector is properly configured. It should exercise any API credentials
 // to be sure that they are valid.
 func (d *SnipeIt) Validate(ctx context.Context) (annotations.Annotations, error) {
-	_, _, err := d.client.GetAllUsers(ctx, 0, 1)
+	_, _, err := d.client.GetUsers(ctx, 0, 1)
 	if err != nil {
 		return nil, wrapError(err, "Not enough permissions to get users")
 	}

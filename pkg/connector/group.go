@@ -68,17 +68,18 @@ func (g *groupResourceType) Grants(ctx context.Context, resource *v2.Resource, p
 		return nil, "", nil, err
 	}
 
-	users, _, err := g.client.GetAllUsers(ctx, offset, resourcePageSize)
+	groupID, err := strconv.Atoi(resource.Id.Resource)
+	if err != nil {
+		return nil, "", nil, err
+	}
+
+	users, _, err := g.client.GetUsers(ctx, offset, resourcePageSize, snipeit.WithGroupId(groupID))
 	if err != nil {
 		return nil, "", nil, wrapError(err, "Failed to get users")
 	}
 
 	var rv []*v2.Grant
 	for _, user := range users.Rows {
-		groupID, err := strconv.Atoi(resource.Id.Resource)
-		if err != nil {
-			return nil, "", nil, err
-		}
 		if !user.Groups.ContainsGroup(groupID) {
 			continue
 		}
