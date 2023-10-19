@@ -192,7 +192,7 @@ func (g *groupResourceType) Revoke(ctx context.Context, grant *v2.Grant) (annota
 	principal := grant.Principal
 
 	if principal.Id.ResourceType != resourceTypeUser.Id {
-		err := fmt.Errorf("baton-snipe-it: only user can be granted to groups")
+		err := fmt.Errorf("baton-snipe-it: only user can be revoked from groups")
 
 		l.Warn(
 			err.Error(),
@@ -227,7 +227,7 @@ func (g *groupResourceType) Revoke(ctx context.Context, grant *v2.Grant) (annota
 
 	_, err = g.client.RemoveUserFromGroup(ctx, groupID, userID)
 	if err != nil {
-		err := wrapError(err, "baton-snipe-it: failed to add user to group")
+		err := wrapError(err, "baton-snipe-it: failed to remove user from group")
 
 		l.Error(
 			err.Error(),
