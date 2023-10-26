@@ -24,6 +24,10 @@ type (
 		Total int    `json:"total"`
 		Rows  []User `json:"rows"`
 	}
+
+	PatchUserBody struct {
+		Groups []int `json:"groups,omitempty" structs:"groups,omitempty"`
+	}
 )
 
 func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...queryFunction) (*UsersResponse, *http.Response, error) {
@@ -48,4 +52,21 @@ func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...query
 	}
 
 	return users, resp, nil
+}
+
+func (c *Client) GetUser(ctx context.Context, id int) (*User, *http.Response, error) {
+	url := fmt.Sprintf("%s/api/v1/users/%d", c.baseUrl, id)
+
+	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodGet, url)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	user := new(User)
+	resp, err := c.do(req, user)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return user, resp, nil
 }
