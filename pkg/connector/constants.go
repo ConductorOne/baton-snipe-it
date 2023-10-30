@@ -1,3 +1,3 @@
 package connector
 
-var resourcePageSize = 50
+const resourcePageSize = 50
