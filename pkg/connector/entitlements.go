@@ -2,4 +2,4 @@ package connector
 
 var memberEntitlement = "member"
 
-var appointedEntitlement = "appointed"
+var assignedEntitlement = "assigned"

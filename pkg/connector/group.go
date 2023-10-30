@@ -12,6 +12,8 @@ import (
 	grant "github.com/conductorone/baton-sdk/pkg/types/grant"
 	rs "github.com/conductorone/baton-sdk/pkg/types/resource"
 	snipeit "github.com/conductorone/baton-snipe-it/pkg/snipe-it"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"go.uber.org/zap"
 )
 
 var resourceTypeGroup = &v2.ResourceType{
@@ -131,4 +133,109 @@ func (g *groupResourceType) List(ctx context.Context, _ *v2.ResourceId, _ *pagin
 	}
 
 	return resources, "", nil, nil
+}
+
+func (g *groupResourceType) Grant(ctx context.Context, principal *v2.Resource, entitlement *v2.Entitlement) (annotations.Annotations, error) {
+	l := ctxzap.Extract(ctx)
+
+	if principal.Id.ResourceType != resourceTypeUser.Id {
+		err := fmt.Errorf("baton-snipe-it: only user can be granted to groups")
+
+		l.Warn(
+			err.Error(),
+			zap.String("principal_type", principal.Id.ResourceType),
+			zap.String("principal_id", principal.Id.Resource),
+		)
+
+		return nil, err
+	}
+
+	groupID, err := strconv.Atoi(entitlement.Resource.Id.Resource)
+	if err != nil {
+		err := wrapError(err, "baton-snipe-it: failed to parse group id")
+
+		l.Error(
+			err.Error(),
+			zap.String("groupId", entitlement.Resource.Id.Resource),
+		)
+
+		return nil, err
+	}
+
+	userID, err := strconv.Atoi(principal.Id.Resource)
+	if err != nil {
+		err := wrapError(err, "baton-snipe-it: failed to parse user id")
+
+		l.Error(
+			err.Error(),
+			zap.String("userId", principal.Id.Resource),
+		)
+	}
+
+	_, err = g.client.AddUserToGroup(ctx, groupID, userID)
+	if err != nil {
+		err := wrapError(err, "baton-snipe-it: failed to add user to group")
+
+		l.Error(
+			err.Error(),
+			zap.String("groupId", entitlement.Resource.Id.Resource),
+			zap.String("userId", principal.Id.Resource),
+		)
+	}
+
+	return nil, nil
+}
+
+func (g *groupResourceType) Revoke(ctx context.Context, grant *v2.Grant) (annotations.Annotations, error) {
+	l := ctxzap.Extract(ctx)
+
+	entitlement := grant.Entitlement
+	principal := grant.Principal
+
+	if principal.Id.ResourceType != resourceTypeUser.Id {
+		err := fmt.Errorf("baton-snipe-it: only user can be revoked from groups")
+
+		l.Warn(
+			err.Error(),
+			zap.String("principal_type", principal.Id.ResourceType),
+			zap.String("principal_id", principal.Id.Resource),
+		)
+
+		return nil, err
+	}
+
+	groupID, err := strconv.Atoi(entitlement.Resource.Id.Resource)
+	if err != nil {
+		err := wrapError(err, "baton-snipe-it: failed to parse group id")
+
+		l.Error(
+			err.Error(),
+			zap.String("groupId", entitlement.Resource.Id.Resource),
+		)
+
+		return nil, err
+	}
+
+	userID, err := strconv.Atoi(principal.Id.Resource)
+	if err != nil {
+		err := wrapError(err, "baton-snipe-it: failed to parse user id")
+
+		l.Error(
+			err.Error(),
+			zap.String("userId", principal.Id.Resource),
+		)
+	}
+
+	_, err = g.client.RemoveUserFromGroup(ctx, groupID, userID)
+	if err != nil {
+		err := wrapError(err, "baton-snipe-it: failed to remove user from group")
+
+		l.Error(
+			err.Error(),
+			zap.String("groupId", entitlement.Resource.Id.Resource),
+			zap.String("userId", principal.Id.Resource),
+		)
+	}
+
+	return nil, nil
 }
