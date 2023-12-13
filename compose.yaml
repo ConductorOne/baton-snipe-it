@@ -1,0 +1,52 @@
+version: '3.7'
+services:
+  snipe:
+    image: snipe/snipe-it:latest
+    container_name: snipe
+    hostname: snipe
+    ports:
+      - "8080:80"
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=base64:Glj2HbPaX9S1R9sOBUgr6MdL4dIR8njbVOoBKDRsGZg=
+      - APP_URL=http://localhost:8080
+      - APP_TIMEZONE=Etc/UTC
+      - APP_LOCALE=en
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=snipeit
+      - MYSQL_USER=snipeit
+      - MYSQL_PASSWORD=userpassword
+      - MYSQL_PORT_3306_TCP_ADDR=mysql
+
+      # Docker-specific variables
+      - PHP_UPLOAD_LIMIT=100
+    depends_on:
+      - mysql
+    networks:
+      - snipe
+
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    hostname: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=snipeit
+      - MYSQL_USER=snipeit
+      - MYSQL_PASSWORD=userpassword
+    healthcheck:
+      test: ["CMD", 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p$$MYSQL_ROOT_PASSWORD' ]
+      interval: 1m30s
+      timeout: 10s
+      retries: 10
+      start_period: 5s
+      start_interval: 5s
+    networks:
+      - snipe
+
+networks:
+  snipe:
+    driver: bridge
