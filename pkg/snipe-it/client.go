@@ -52,14 +52,17 @@ func (c *Client) do(req *http.Request, response ...interface{}) (*http.Response,
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, newSnipeItError(resp.StatusCode, err)
 	}
 
 	if response != nil {
-		defer resp.Body.Close()
 		err = json.NewDecoder(resp.Body).Decode(response[0])
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return resp, err

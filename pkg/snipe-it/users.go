@@ -21,7 +21,7 @@ type (
 	}
 
 	UsersResponse struct {
-		Total int    `json:"total"`
+		Total int64  `json:"total"`
 		Rows  []User `json:"rows"`
 	}
 

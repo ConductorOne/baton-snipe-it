@@ -1,13 +1,13 @@
 package snipeit
 
 type (
-	Permission string
+	Permission int64
 
 	Permissions map[string]Permission
 )
 
 var (
-	Granted   Permission = "1"
-	Denied    Permission = "-1"
-	Inherited Permission = "0"
+	Granted   Permission = 1
+	Denied    Permission = -1
+	Inherited Permission = 0
 )
