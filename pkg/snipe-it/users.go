@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"go.uber.org/zap"
 )
 
 type (
@@ -21,7 +24,7 @@ type (
 	}
 
 	UsersResponse struct {
-		Total int    `json:"total"`
+		Total int64  `json:"total"`
 		Rows  []User `json:"rows"`
 	}
 
@@ -30,12 +33,12 @@ type (
 	}
 )
 
-func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...queryFunction) (*UsersResponse, *http.Response, error) {
+func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...queryFunction) (*UsersResponse, error) {
 	url := fmt.Sprint(c.baseUrl, "/api/v1/users")
 
 	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodGet, url)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	query = append(query, WithOffset(offset), WithLimit(limit))
@@ -46,27 +49,28 @@ func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...query
 	)
 
 	users := new(UsersResponse)
-	resp, err := c.do(req, users)
+	err = c.do(req, users)
 	if err != nil {
-		return nil, resp, err
+		ctxzap.Extract(ctx).Error("Failed to get users", zap.Error(err))
+		return nil, err
 	}
 
-	return users, resp, nil
+	return users, nil
 }
 
-func (c *Client) GetUser(ctx context.Context, id int) (*User, *http.Response, error) {
+func (c *Client) GetUser(ctx context.Context, id int) (*User, error) {
 	url := fmt.Sprintf("%s/api/v1/users/%d", c.baseUrl, id)
 
 	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodGet, url)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	user := new(User)
-	resp, err := c.do(req, user)
+	err = c.do(req, user)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	return user, resp, nil
+	return user, nil
 }

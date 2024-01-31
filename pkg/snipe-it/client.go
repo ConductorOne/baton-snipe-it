@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -29,7 +31,6 @@ func (c *Client) newRequestWithDefaultHeaders(ctx context.Context, method, url s
 	if body != nil {
 		buffer = new(bytes.Buffer)
 		err := json.NewEncoder(buffer).Encode(body[0])
-
 		if err != nil {
 			return nil, err
 		}
@@ -47,20 +48,24 @@ func (c *Client) newRequestWithDefaultHeaders(ctx context.Context, method, url s
 	return req, nil
 }
 
-func (c *Client) do(req *http.Request, response ...interface{}) (*http.Response, error) {
+func (c *Client) do(req *http.Request, response interface{}) error {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	defer resp.Body.Close()
 
-	if resp.StatusCode < 200 && resp.StatusCode < 300 {
-		return nil, newSnipeItError(resp.StatusCode, err)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		out, err2 := io.ReadAll(resp.Body)
+		return errors.Join(err, err2, fmt.Errorf("unexpected status code: %d. body: %s", resp.StatusCode, string(out)))
 	}
 
 	if response != nil {
-		defer resp.Body.Close()
-		err = json.NewDecoder(resp.Body).Decode(response[0])
+		err = json.NewDecoder(resp.Body).Decode(response)
+		if err != nil {
+			return err
+		}
 	}
 
-	return resp, err
+	return err
 }

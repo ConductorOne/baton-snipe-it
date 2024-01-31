@@ -19,21 +19,21 @@ type (
 	}
 )
 
-func (c *Client) GetAllGroups(ctx context.Context) (*GroupsResponse, *http.Response, error) {
+func (c *Client) GetAllGroups(ctx context.Context) (*GroupsResponse, error) {
 	url := fmt.Sprint(c.baseUrl, "/api/v1/groups")
 
 	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodGet, url)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	groups := new(GroupsResponse)
-	resp, err := c.do(req, groups)
+	err = c.do(req, groups)
 	if err != nil {
-		return nil, resp, err
+		return nil, err
 	}
 
-	return groups, resp, nil
+	return groups, nil
 }
 
 func (x GroupsResponse) ContainsGroup(id int) bool {
@@ -46,10 +46,10 @@ func (x GroupsResponse) ContainsGroup(id int) bool {
 	return false
 }
 
-func (c *Client) AddUserToGroup(ctx context.Context, groupId int, userId int) (*http.Response, error) {
-	user, _, err := c.GetUser(ctx, userId)
+func (c *Client) AddUserToGroup(ctx context.Context, groupId int, userId int) error {
+	user, err := c.GetUser(ctx, userId)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	url := fmt.Sprintf("%s/api/v1/users/%d", c.baseUrl, userId)
@@ -64,21 +64,21 @@ func (c *Client) AddUserToGroup(ctx context.Context, groupId int, userId int) (*
 
 	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodPatch, url, body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	resp, err := c.do(req)
+	err = c.do(req, nil)
 	if err != nil {
-		return resp, err
+		return err
 	}
 
-	return resp, nil
+	return nil
 }
 
-func (c *Client) RemoveUserFromGroup(ctx context.Context, groupId int, userId int) (*http.Response, error) {
-	user, _, err := c.GetUser(ctx, userId)
+func (c *Client) RemoveUserFromGroup(ctx context.Context, groupId int, userId int) error {
+	user, err := c.GetUser(ctx, userId)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	url := fmt.Sprintf("%s/api/v1/users/%d", c.baseUrl, userId)
@@ -95,13 +95,13 @@ func (c *Client) RemoveUserFromGroup(ctx context.Context, groupId int, userId in
 
 	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodPatch, url, body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	resp, err := c.do(req)
+	err = c.do(req, nil)
 	if err != nil {
-		return resp, err
+		return err
 	}
 
-	return resp, nil
+	return nil
 }

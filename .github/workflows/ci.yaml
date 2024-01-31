@@ -83,6 +83,9 @@ jobs:
         run: go build ./cmd/baton-snipe-it
       - name: Run baton-snipe-it
         env:
-          BATON_BASE_URL: 'http://localhost:8080/api/v1/'
+          BATON_BASE_URL: 'http://localhost:8080'
           BATON_ACCESS_TOKEN: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzIiwianRpIjoiMTViYjc5MWFlN2JiMDc2MjU0NDNjZGU1ODVjN2FjODAxYWVhNjFmOGIxZWVlNWJkM2ViZGQwNDdiZDVjYjEyZWIwNmY4Y2Y1YTQ0YjU0MjYiLCJpYXQiOjE3MDI0NDkwNDguNTc0OCwibmJmIjoxNzAyNDQ5MDQ4LjU3NDgwNywiZXhwIjoyMzMzNjAxMDQ4LjU2MTg5LCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.Hlg-G7BJ1ap5V66wHiRGMJUqVTuElkBoSJ1qlyHz00iZYESZ0zcF8_FmpUhWQKRHierS8LG_bFNhNrtOGK81WSaqYxoLOuKkfQjIpolIDl3IR_IxnaKt1FtXqYfZ_pO1SttQxq6R23eKmjSH-sflfGEvNPIoozjVwV0ouR4PdVJSv9mgvPAVUguhv2xFGEh3KH5YYOxnVAMbeX4qxmhH_RazuguDPtIRq_PmBlntE7FjcZ_YGcVSYM9-xRFYX2-zFT-n_BXp5OsIYLH6dtNaf2ldw1bp2cU1mOVUVvmEZ6WOGpSPs6u4J8d2UHIMd6Pj2x74RGB1cRCNJ_lkmKgM49ox4hGYB5t4PtsGwB9yy9Wka0iqWDOZOHdiaqOTSFDD8zEcq-VYi056QeIfiDeHtDwMqM13L0wqIPwCaZrJTvJ9cE_HH3ST9L7SoP1jR5h5K8P9JXD3L05AiEqUYd0vgmM1r6oZnthzTSmJsqJO4Q_pFQkGLq8cKaL5HiVyiWz0edRd1jVrTvijdgY8vMLQbx3542qMmw8swIksd7F2W5SjThChvcOm_C4c8kx2lBisD5vowWiA8hSBIU28gpkJQpwYOTcYU03c0F9QRVzHpIP0_iiI7Zzz3CtgkGF-RgNR_lI8Xh5hNkRgII7ZI-CHquk_FOppEmFDiGWR1fgDcFo'
         run: ./baton-snipe-it
+      - name: Snipe logs
+        if: always()
+        run: docker logs "${{ job.services.snipe.id }}"
