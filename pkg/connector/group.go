@@ -9,11 +9,12 @@ import (
 	"github.com/conductorone/baton-sdk/pkg/annotations"
 	"github.com/conductorone/baton-sdk/pkg/pagination"
 	ent "github.com/conductorone/baton-sdk/pkg/types/entitlement"
-	grant "github.com/conductorone/baton-sdk/pkg/types/grant"
+	"github.com/conductorone/baton-sdk/pkg/types/grant"
 	rs "github.com/conductorone/baton-sdk/pkg/types/resource"
-	snipeit "github.com/conductorone/baton-snipe-it/pkg/snipe-it"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"go.uber.org/zap"
+
+	snipeit "github.com/conductorone/baton-snipe-it/pkg/snipe-it"
 )
 
 var resourceTypeGroup = &v2.ResourceType{
@@ -75,7 +76,7 @@ func (g *groupResourceType) Grants(ctx context.Context, resource *v2.Resource, p
 		return nil, "", nil, err
 	}
 
-	users, _, err := g.client.GetUsers(ctx, offset, resourcePageSize, snipeit.WithGroupId(groupID))
+	users, err := g.client.GetUsers(ctx, offset, resourcePageSize, snipeit.WithGroupId(groupID))
 	if err != nil {
 		return nil, "", nil, wrapError(err, "Failed to get users")
 	}
@@ -116,7 +117,7 @@ func newGroupBuilder(client *snipeit.Client) *groupResourceType {
 }
 
 func (g *groupResourceType) List(ctx context.Context, _ *v2.ResourceId, _ *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
-	groups, _, err := g.client.GetAllGroups(ctx)
+	groups, err := g.client.GetAllGroups(ctx)
 	if err != nil {
 		return nil, "", nil, err
 	}
@@ -172,7 +173,7 @@ func (g *groupResourceType) Grant(ctx context.Context, principal *v2.Resource, e
 		)
 	}
 
-	_, err = g.client.AddUserToGroup(ctx, groupID, userID)
+	err = g.client.AddUserToGroup(ctx, groupID, userID)
 	if err != nil {
 		err := wrapError(err, "baton-snipe-it: failed to add user to group")
 
@@ -226,7 +227,7 @@ func (g *groupResourceType) Revoke(ctx context.Context, grant *v2.Grant) (annota
 		)
 	}
 
-	_, err = g.client.RemoveUserFromGroup(ctx, groupID, userID)
+	err = g.client.RemoveUserFromGroup(ctx, groupID, userID)
 	if err != nil {
 		err := wrapError(err, "baton-snipe-it: failed to remove user from group")
 

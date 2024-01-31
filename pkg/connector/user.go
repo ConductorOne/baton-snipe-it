@@ -9,6 +9,7 @@ import (
 	"github.com/conductorone/baton-sdk/pkg/annotations"
 	"github.com/conductorone/baton-sdk/pkg/pagination"
 	rs "github.com/conductorone/baton-sdk/pkg/types/resource"
+
 	snipeit "github.com/conductorone/baton-snipe-it/pkg/snipe-it"
 )
 
@@ -76,7 +77,7 @@ func (o *userResourceType) List(ctx context.Context, _ *v2.ResourceId, pt *pagin
 		return nil, "", nil, err
 	}
 
-	users, _, err := o.client.GetUsers(ctx, offset, resourcePageSize)
+	users, err := o.client.GetUsers(ctx, offset, resourcePageSize)
 	if err != nil {
 		return nil, "", nil, wrapError(err, "Failed to get users")
 	}

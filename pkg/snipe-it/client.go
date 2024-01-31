@@ -48,29 +48,23 @@ func (c *Client) newRequestWithDefaultHeaders(ctx context.Context, method, url s
 	return req, nil
 }
 
-func (c *Client) do(req *http.Request, response interface{}) (*http.Response, error) {
+func (c *Client) do(req *http.Request, response interface{}) error {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, errors.Join(err, fmt.Errorf("unexpected status code: %d", resp.StatusCode))
+		return errors.Join(err, fmt.Errorf("unexpected status code: %d", resp.StatusCode))
 	}
 
 	if response != nil {
-		body, err := io.ReadAll(resp.Body)
+		err = json.NewDecoder(resp.Body).Decode(response)
 		if err != nil {
-			return nil, err
-		}
-		resp.Body = io.NopCloser(bytes.NewBuffer(body))
-
-		err = json.Unmarshal(body, response)
-		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return resp, err
+	return err
 }

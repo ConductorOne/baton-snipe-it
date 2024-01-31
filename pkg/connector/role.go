@@ -9,8 +9,9 @@ import (
 	"github.com/conductorone/baton-sdk/pkg/annotations"
 	"github.com/conductorone/baton-sdk/pkg/pagination"
 	ent "github.com/conductorone/baton-sdk/pkg/types/entitlement"
-	grant "github.com/conductorone/baton-sdk/pkg/types/grant"
+	"github.com/conductorone/baton-sdk/pkg/types/grant"
 	rs "github.com/conductorone/baton-sdk/pkg/types/resource"
+
 	snipeit "github.com/conductorone/baton-snipe-it/pkg/snipe-it"
 )
 
@@ -74,7 +75,7 @@ func (r *roleResourceType) Entitlements(ctx context.Context, resource *v2.Resour
 
 	if offset == 0 {
 		// Groups doesn't have pagination, so we need to get all groups and iterate over them just once
-		groups, _, err := r.client.GetAllGroups(ctx)
+		groups, err := r.client.GetAllGroups(ctx)
 		if err != nil {
 			return nil, "", nil, wrapError(err, "Failed to get groups")
 		}
@@ -89,7 +90,7 @@ func (r *roleResourceType) Entitlements(ctx context.Context, resource *v2.Resour
 		}
 	}
 
-	users, _, err := r.client.GetUsers(ctx, offset, resourcePageSize)
+	users, err := r.client.GetUsers(ctx, offset, resourcePageSize)
 	if err != nil {
 		return nil, "", nil, wrapError(err, "Failed to get users")
 	}
@@ -208,7 +209,7 @@ func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pa
 
 	if offset == 0 {
 		// Groups doesn't have pagination, so we need to get all groups and iterate over them just once
-		groups, _, err := r.client.GetAllGroups(ctx)
+		groups, err := r.client.GetAllGroups(ctx)
 		if err != nil {
 			return nil, "", nil, wrapError(err, "Failed to get groups")
 		}
@@ -229,7 +230,7 @@ func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pa
 		}
 	}
 
-	users, _, err := r.client.GetUsers(ctx, offset, resourcePageSize)
+	users, err := r.client.GetUsers(ctx, offset, resourcePageSize)
 	if err != nil {
 		return nil, "", nil, wrapError(err, "Failed to get users")
 	}
