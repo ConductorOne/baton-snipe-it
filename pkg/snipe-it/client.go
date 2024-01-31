@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -64,6 +65,8 @@ func (c *Client) do(req *http.Request, response interface{}) (*http.Response, er
 			return nil, err
 		}
 		resp.Body = io.NopCloser(bytes.NewBuffer(body))
+
+		fmt.Println(string(body))
 
 		err = json.Unmarshal(body, response)
 		if err != nil {

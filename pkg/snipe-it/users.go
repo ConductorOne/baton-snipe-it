@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"go.uber.org/zap"
 )
 
 type (
@@ -48,6 +51,7 @@ func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...query
 	users := new(UsersResponse)
 	resp, err := c.do(req, users)
 	if err != nil {
+		ctxzap.Extract(ctx).Error("Failed to get users", zap.Error(err))
 		return nil, resp, err
 	}
 
