@@ -67,7 +67,7 @@ func (c *Client) AddUserToGroup(ctx context.Context, groupId int, userId int) (*
 		return nil, err
 	}
 
-	resp, err := c.do(req)
+	resp, err := c.do(req, nil)
 	if err != nil {
 		return resp, err
 	}
@@ -98,7 +98,7 @@ func (c *Client) RemoveUserFromGroup(ctx context.Context, groupId int, userId in
 		return nil, err
 	}
 
-	resp, err := c.do(req)
+	resp, err := c.do(req, nil)
 	if err != nil {
 		return resp, err
 	}

@@ -47,7 +47,7 @@ func (c *Client) newRequestWithDefaultHeaders(ctx context.Context, method, url s
 	return req, nil
 }
 
-func (c *Client) do(req *http.Request, response ...interface{}) (*http.Response, error) {
+func (c *Client) do(req *http.Request, response interface{}) (*http.Response, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -59,7 +59,13 @@ func (c *Client) do(req *http.Request, response ...interface{}) (*http.Response,
 	}
 
 	if response != nil {
-		err = json.NewDecoder(resp.Body).Decode(response[0])
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		resp.Body = io.NopCloser(bytes.NewBuffer(body))
+
+		err = json.Unmarshal(body, response)
 		if err != nil {
 			return nil, err
 		}
