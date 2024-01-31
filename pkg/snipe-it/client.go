@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,7 +31,6 @@ func (c *Client) newRequestWithDefaultHeaders(ctx context.Context, method, url s
 	if body != nil {
 		buffer = new(bytes.Buffer)
 		err := json.NewEncoder(buffer).Encode(body[0])
-
 		if err != nil {
 			return nil, err
 		}
@@ -49,7 +49,6 @@ func (c *Client) newRequestWithDefaultHeaders(ctx context.Context, method, url s
 }
 
 func (c *Client) do(req *http.Request, response interface{}) (*http.Response, error) {
-	fmt.Println("making request", req.URL.String())
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -57,7 +56,7 @@ func (c *Client) do(req *http.Request, response interface{}) (*http.Response, er
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, newSnipeItError(resp.StatusCode, err)
+		return nil, errors.Join(err, fmt.Errorf("unexpected status code: %d", resp.StatusCode))
 	}
 
 	if response != nil {
