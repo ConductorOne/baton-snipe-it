@@ -56,7 +56,9 @@ func (c *Client) do(req *http.Request, response interface{}) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return errors.Join(err, fmt.Errorf("unexpected status code: %d", resp.StatusCode))
+		out, err2 := io.ReadAll(resp.Body)
+		fmt.Println(string(out))
+		return errors.Join(err, err2, fmt.Errorf("unexpected status code: %d", resp.StatusCode))
 	}
 
 	if response != nil {
