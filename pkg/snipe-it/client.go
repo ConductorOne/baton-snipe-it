@@ -49,6 +49,7 @@ func (c *Client) newRequestWithDefaultHeaders(ctx context.Context, method, url s
 }
 
 func (c *Client) do(req *http.Request, response interface{}) (*http.Response, error) {
+	fmt.Println("making request", req.URL.String())
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -65,8 +66,6 @@ func (c *Client) do(req *http.Request, response interface{}) (*http.Response, er
 			return nil, err
 		}
 		resp.Body = io.NopCloser(bytes.NewBuffer(body))
-
-		fmt.Println(string(body))
 
 		err = json.Unmarshal(body, response)
 		if err != nil {
