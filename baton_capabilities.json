@@ -3,24 +3,6 @@
   "resourceTypeCapabilities": [
     {
       "resourceType": {
-        "id": "user",
-        "displayName": "User",
-        "traits": [
-          "TRAIT_USER"
-        ],
-        "annotations": [
-          {
-            "@type": "type.googleapis.com/c1.connector.v2.SkipEntitlementsAndGrants"
-          }
-        ],
-        "description": "A user in Snipe-IT"
-      },
-      "capabilities": [
-        "CAPABILITY_SYNC"
-      ]
-    },
-    {
-      "resourceType": {
         "id": "group",
         "displayName": "Group",
         "traits": [
@@ -41,6 +23,24 @@
           "TRAIT_ROLE"
         ],
         "description": "A role in Snipe-IT"
+      },
+      "capabilities": [
+        "CAPABILITY_SYNC"
+      ]
+    },
+    {
+      "resourceType": {
+        "id": "user",
+        "displayName": "User",
+        "traits": [
+          "TRAIT_USER"
+        ],
+        "annotations": [
+          {
+            "@type": "type.googleapis.com/c1.connector.v2.SkipEntitlementsAndGrants"
+          }
+        ],
+        "description": "A user in Snipe-IT"
       },
       "capabilities": [
         "CAPABILITY_SYNC"
