@@ -3,19 +3,6 @@
   "resourceTypeCapabilities": [
     {
       "resourceType": {
-        "id": "role",
-        "displayName": "Role",
-        "traits": [
-          "TRAIT_ROLE"
-        ],
-        "description": "A role in Snipe-IT"
-      },
-      "capabilities": [
-        "CAPABILITY_SYNC"
-      ]
-    },
-    {
-      "resourceType": {
         "id": "user",
         "displayName": "User",
         "traits": [
@@ -44,6 +31,19 @@
       "capabilities": [
         "CAPABILITY_SYNC",
         "CAPABILITY_PROVISION"
+      ]
+    },
+    {
+      "resourceType": {
+        "id": "role",
+        "displayName": "Role",
+        "traits": [
+          "TRAIT_ROLE"
+        ],
+        "description": "A role in Snipe-IT"
+      },
+      "capabilities": [
+        "CAPABILITY_SYNC"
       ]
     }
   ]
