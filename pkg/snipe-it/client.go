@@ -53,7 +53,7 @@ func (c *Client) do(req *http.Request, response ...interface{}) (*http.Response,
 		return nil, err
 	}
 
-	if resp.StatusCode < 200 && resp.StatusCode < 300 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, newSnipeItError(resp.StatusCode, err)
 	}
 
