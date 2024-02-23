@@ -52,16 +52,12 @@ func (d *SnipeIt) Validate(ctx context.Context) (annotations.Annotations, error)
 
 // New returns a new instance of the connector.
 func New(ctx context.Context, baseUrl string, accessToken string) (*SnipeIt, error) {
-	httpClient, err := uhttp.NewClient(
-		ctx,
-		uhttp.WithLogger(true, nil),
-		uhttp.WithUserAgent("baton-snipe-it"),
-	)
+	httpClient, err := uhttp.NewBearerAuth(accessToken).GetClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &SnipeIt{
-		client: snipeit.New(baseUrl, accessToken, httpClient),
+		client: snipeit.New(baseUrl, httpClient),
 	}, nil
 }
