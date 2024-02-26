@@ -23,7 +23,7 @@ var (
 		Traits:      []v2.ResourceType_Trait{v2.ResourceType_TRAIT_ROLE},
 	}
 
-	roles      = []string{"Superuser", "Admin", "Other"}
+	roles      = []string{"Superuser", "Admin", "User", "Import", "Other"}
 	adminRoles = []string{"Superuser", "Admin"}
 
 	rolesLowerCase      = Map(roles, strings.ToLower)

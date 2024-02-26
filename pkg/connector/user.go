@@ -45,12 +45,14 @@ func userResource(ctx context.Context, user *snipeit.User) (*v2.Resource, error)
 		"login":           user.Username,
 		"user_id":         strconv.Itoa(user.ID),
 		"vip":             strconv.FormatBool(user.VIP),
+		"activated":       strconv.FormatBool(user.Activated),
 		"employee_number": user.EmployeeNumber,
 	}
 
 	userTraitOptions := []rs.UserTraitOption{
 		rs.WithUserProfile(profile),
 		rs.WithEmail(user.Email, true),
+		rs.WithUserLogin(user.Username),
 		rs.WithStatus(getUserStatus(user)),
 	}
 
