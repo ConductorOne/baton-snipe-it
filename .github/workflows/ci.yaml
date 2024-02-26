@@ -50,7 +50,7 @@ jobs:
           MYSQL_PASSWORD: userpassword
         options: --health-cmd="mysqladmin ping -h localhost -u root --password=rootpassword" --health-interval=10s --health-timeout=5s --health-retries=10
       snipe:
-        image: snipe/snipe-it:latest
+        image: snipe/snipe-it:v6.3.1
         ports:
           - "8080:80"
         env:
@@ -78,15 +78,13 @@ jobs:
       - name: Install mysql client
         run: sudo apt install mysql-client-8.0
       - name: Fix keys
-        run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:latest' --format='{{.ID}}') bash -c 'php artisan passport:install'
+        run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'php artisan passport:install'
       - name: Run migrations
-        run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:latest' --format='{{.ID}}') bash -c 'php artisan migrate'
+        run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'php artisan migrate'
       - name: Initialize database for snipe-it
         run: mysql --host=127.0.0.1 --user=root --password=rootpassword --port=3306 snipeit < test/snipeit.sql
-      - name: What
-        run: docker ps
       # - name: Fix permissions
-      #   run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:latest' --format='{{.ID}}') bash -c 'chown docker /var/www/html/storage/logs/laravel.log'
+      #   run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'chown docker /var/www/html/storage/logs/laravel.log'
       - name: Build baton-snipe-it
         run: go build ./cmd/baton-snipe-it
       - name: Run baton-snipe-it

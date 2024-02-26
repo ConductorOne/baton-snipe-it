@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   snipe:
-    image: snipe/snipe-it:latest
+    image: snipe/snipe-it:v6.3.1
     container_name: snipe
     hostname: snipe
     ports:
