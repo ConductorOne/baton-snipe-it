@@ -39,10 +39,11 @@ func (c *Client) GetAllGroups(ctx context.Context) (*GroupsResponse, error) {
 	}
 
 	groups := new(GroupsResponse)
-	_, err = c.Do(req, uhttp.WithJSONResponse(groups))
+	res, err := c.Do(req, uhttp.WithJSONResponse(groups))
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	return groups, nil
 }
@@ -86,10 +87,11 @@ func (c *Client) AddUserToGroup(ctx context.Context, groupId int, userId int) er
 		return err
 	}
 
-	_, err = c.Do(req)
+	res, err := c.Do(req)
 	if err != nil {
 		return err
 	}
+	defer res.Body.Close()
 
 	return nil
 }
@@ -125,10 +127,11 @@ func (c *Client) RemoveUserFromGroup(ctx context.Context, groupId int, userId in
 		return err
 	}
 
-	_, err = c.Do(req)
+	res, err := c.Do(req)
 	if err != nil {
 		return err
 	}
+	defer res.Body.Close()
 
 	return nil
 }

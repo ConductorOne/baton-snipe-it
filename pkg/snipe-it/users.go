@@ -58,11 +58,12 @@ func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...query
 	)
 
 	users := new(UsersResponse)
-	_, err = c.Do(req, uhttp.WithJSONResponse(users))
+	res, err := c.Do(req, uhttp.WithJSONResponse(users))
 	if err != nil {
 		ctxzap.Extract(ctx).Error("Failed to get users", zap.Error(err))
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	return users, nil
 }
@@ -84,10 +85,11 @@ func (c *Client) GetUser(ctx context.Context, id int) (*User, error) {
 	}
 
 	user := new(User)
-	_, err = c.Do(req, uhttp.WithJSONResponse(user))
+	res, err := c.Do(req, uhttp.WithJSONResponse(user))
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	return user, nil
 }
