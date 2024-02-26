@@ -2,6 +2,7 @@ package snipeit
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -57,7 +58,13 @@ func (c *Client) Validate(ctx context.Context) error {
 			return c.Validate(ctx)
 		}
 
-		ctxzap.Extract(ctx).Error("Failed to get validate API", zap.Error(err))
+		bodyBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+		bodyString := string(bodyBytes)
+
+		ctxzap.Extract(ctx).Error("Failed to validate API", zap.Error(err), zap.Any("response", res), zap.String("body", bodyString))
 		return err
 	}
 	defer res.Body.Close()
