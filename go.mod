@@ -3,7 +3,7 @@ module github.com/conductorone/baton-snipe-it
 go 1.20
 
 require (
-	github.com/conductorone/baton-sdk v0.1.25
+	github.com/conductorone/baton-sdk v0.1.26
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/spf13/cobra v1.8.0
 	go.uber.org/zap v1.27.0
