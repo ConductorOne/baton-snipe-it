@@ -2,6 +2,7 @@ package snipeit
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -28,6 +29,7 @@ func New(baseUrl string, httpClient *http.Client) *Client {
 }
 
 func (c *Client) Validate(ctx context.Context) error {
+	l := ctxzap.Extract(ctx)
 	stringUrl, err := url.JoinPath(c.baseUrl, "api/v1/users")
 	if err != nil {
 		return err
@@ -64,10 +66,16 @@ func (c *Client) Validate(ctx context.Context) error {
 		}
 		bodyString := string(bodyBytes)
 
-		ctxzap.Extract(ctx).Error("Failed to validate API", zap.Error(err), zap.Any("response", res), zap.String("body", bodyString))
+		l.Error("Failed to validate API", zap.Error(err), zap.Any("response", res), zap.String("body", bodyString))
 		return err
 	}
 	defer res.Body.Close()
 
-	return nil
+	users := new(UsersResponse)
+	err = json.NewDecoder(res.Body).Decode(users)
+	if err == nil {
+		l.Debug("Got users", zap.Any("users", users))
+	}
+
+	return err
 }
