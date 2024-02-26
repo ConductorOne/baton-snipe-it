@@ -3,6 +3,7 @@ package connector
 import (
 	"context"
 	"io"
+	"net/url"
 
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
@@ -42,7 +43,7 @@ func (d *SnipeIt) Metadata(ctx context.Context) (*v2.ConnectorMetadata, error) {
 // Validate is called to ensure that the connector is properly configured. It should exercise any API credentials
 // to be sure that they are valid.
 func (d *SnipeIt) Validate(ctx context.Context) (annotations.Annotations, error) {
-	_, err := d.client.GetUsers(ctx, 0, 1)
+	err := d.client.Validate(ctx)
 	if err != nil {
 		return nil, wrapError(err, "Not enough permissions to get users")
 	}
@@ -57,7 +58,12 @@ func New(ctx context.Context, baseUrl string, accessToken string) (*SnipeIt, err
 		return nil, err
 	}
 
+	u, err := url.Parse(baseUrl)
+	if err != nil {
+		return nil, err
+	}
+
 	return &SnipeIt{
-		client: snipeit.New(baseUrl, httpClient),
+		client: snipeit.New(u.String(), httpClient),
 	}, nil
 }
