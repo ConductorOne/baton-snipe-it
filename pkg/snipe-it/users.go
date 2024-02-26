@@ -2,9 +2,10 @@ package snipeit
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"net/url"
 
+	"github.com/conductorone/baton-sdk/pkg/uhttp"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"go.uber.org/zap"
 )
@@ -34,9 +35,17 @@ type (
 )
 
 func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...queryFunction) (*UsersResponse, error) {
-	url := fmt.Sprint(c.baseUrl, "/api/v1/users")
+	stringUrl, err := url.JoinPath(c.baseUrl, "api/v1/users")
+	if err != nil {
+		return nil, err
+	}
 
-	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodGet, url)
+	u, err := url.Parse(stringUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := c.NewRequest(ctx, http.MethodGet, u)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +58,7 @@ func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...query
 	)
 
 	users := new(UsersResponse)
-	err = c.do(req, users)
+	_, err = c.Do(req, uhttp.WithJSONResponse(users))
 	if err != nil {
 		ctxzap.Extract(ctx).Error("Failed to get users", zap.Error(err))
 		return nil, err
@@ -59,15 +68,23 @@ func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...query
 }
 
 func (c *Client) GetUser(ctx context.Context, id int) (*User, error) {
-	url := fmt.Sprintf("%s/api/v1/users/%d", c.baseUrl, id)
+	stringUrl, err := url.JoinPath(c.baseUrl, "api/v1/users")
+	if err != nil {
+		return nil, err
+	}
 
-	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodGet, url)
+	u, err := url.Parse(stringUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := c.NewRequest(ctx, http.MethodGet, u)
 	if err != nil {
 		return nil, err
 	}
 
 	user := new(User)
-	err = c.do(req, user)
+	_, err = c.Do(req, uhttp.WithJSONResponse(user))
 	if err != nil {
 		return nil, err
 	}

@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
+
+	"github.com/conductorone/baton-sdk/pkg/uhttp"
 )
 
 type (
@@ -20,15 +23,23 @@ type (
 )
 
 func (c *Client) GetAllGroups(ctx context.Context) (*GroupsResponse, error) {
-	url := fmt.Sprint(c.baseUrl, "/api/v1/groups")
+	stringUrl, err := url.JoinPath(c.baseUrl, "api/v1/groups")
+	if err != nil {
+		return nil, err
+	}
 
-	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodGet, url)
+	u, err := url.Parse(stringUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := c.NewRequest(ctx, http.MethodGet, u)
 	if err != nil {
 		return nil, err
 	}
 
 	groups := new(GroupsResponse)
-	err = c.do(req, groups)
+	_, err = c.Do(req, uhttp.WithJSONResponse(groups))
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +63,15 @@ func (c *Client) AddUserToGroup(ctx context.Context, groupId int, userId int) er
 		return err
 	}
 
-	url := fmt.Sprintf("%s/api/v1/users/%d", c.baseUrl, userId)
+	stringUrl, err := url.JoinPath(c.baseUrl, "api/v1/users", fmt.Sprintf("%d", userId))
+	if err != nil {
+		return err
+	}
+
+	u, err := url.Parse(stringUrl)
+	if err != nil {
+		return err
+	}
 
 	var body = PatchUserBody{
 		Groups: []int{groupId},
@@ -62,12 +81,12 @@ func (c *Client) AddUserToGroup(ctx context.Context, groupId int, userId int) er
 		body.Groups = append(body.Groups, group.ID)
 	}
 
-	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodPatch, url, body)
+	req, err := c.NewRequest(ctx, http.MethodPatch, u, uhttp.WithJSONBody(body))
 	if err != nil {
 		return err
 	}
 
-	err = c.do(req, nil)
+	_, err = c.Do(req)
 	if err != nil {
 		return err
 	}
@@ -81,7 +100,15 @@ func (c *Client) RemoveUserFromGroup(ctx context.Context, groupId int, userId in
 		return err
 	}
 
-	url := fmt.Sprintf("%s/api/v1/users/%d", c.baseUrl, userId)
+	stringUrl, err := url.JoinPath(c.baseUrl, "api/v1/users", fmt.Sprintf("%d", userId))
+	if err != nil {
+		return err
+	}
+
+	u, err := url.Parse(stringUrl)
+	if err != nil {
+		return err
+	}
 
 	var body = PatchUserBody{
 		Groups: []int{},
@@ -93,12 +120,12 @@ func (c *Client) RemoveUserFromGroup(ctx context.Context, groupId int, userId in
 		}
 	}
 
-	req, err := c.newRequestWithDefaultHeaders(ctx, http.MethodPatch, url, body)
+	req, err := c.NewRequest(ctx, http.MethodPatch, u, uhttp.WithJSONBody(body))
 	if err != nil {
 		return err
 	}
 
-	err = c.do(req, nil)
+	_, err = c.Do(req)
 	if err != nil {
 		return err
 	}
