@@ -82,11 +82,8 @@ jobs:
         run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'php artisan passport:install'
       - name: Initialize database for snipe-it
         run: docker cp test/snipe-it-manual-backup-2024-02-27-00-00-07.zip $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}'):/var/www/html/ && docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'php artisan snipeit:restore /var/www/html/snipe-it-manual-backup-2024-02-27-00-00-07.zip --force'
-        # run: mysql --host=127.0.0.1 --user=root --password=rootpassword --port=3306 snipeit < test/snipeit.sql
       - name: Run migrations
         run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'php artisan migrate'
-      # - name: Fix permissions
-      #   run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'chown docker /var/www/html/storage/logs/laravel.log'
       - name: Build baton-snipe-it
         run: go build ./cmd/baton-snipe-it
       - name: Run baton-snipe-it
