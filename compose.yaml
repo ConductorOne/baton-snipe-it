@@ -18,6 +18,7 @@ services:
       - MYSQL_USER=snipeit
       - MYSQL_PASSWORD=userpassword
       - MYSQL_PORT_3306_TCP_ADDR=mysql
+      - MYSQL_PORT_3306_TCP_PORT=3306
 
       # Docker-specific variables
       - PHP_UPLOAD_LIMIT=100

@@ -65,6 +65,7 @@ jobs:
           MYSQL_USER: snipeit
           MYSQL_PASSWORD: userpassword
           MYSQL_PORT_3306_TCP_ADDR: mysql
+          MYSQL_PORT_3306_TCP_PORT: 3306
 
           # Docker-specific variables
           PHP_UPLOAD_LIMIT: 100
@@ -79,10 +80,11 @@ jobs:
         run: sudo apt install mysql-client-8.0
       - name: Fix keys
         run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'php artisan passport:install'
+      - name: Initialize database for snipe-it
+        run: docker cp test/snipe-it-manual-backup-2024-02-27-00-00-07.zip $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}'):/var/www/html/ && docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'php artisan snipeit:restore /var/www/html/snipe-it-manual-backup-2024-02-27-00-00-07.zip --force'
+        # run: mysql --host=127.0.0.1 --user=root --password=rootpassword --port=3306 snipeit < test/snipeit.sql
       - name: Run migrations
         run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'php artisan migrate'
-      - name: Initialize database for snipe-it
-        run: mysql --host=127.0.0.1 --user=root --password=rootpassword --port=3306 snipeit < test/snipeit.sql
       # - name: Fix permissions
       #   run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'chown docker /var/www/html/storage/logs/laravel.log'
       - name: Build baton-snipe-it
@@ -90,7 +92,7 @@ jobs:
       - name: Run baton-snipe-it
         env:
           BATON_BASE_URL: 'http://localhost:8080'
-          BATON_ACCESS_TOKEN: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzIiwianRpIjoiMjQ1ZDMxOTU2YjU1NmVjZjA0MDNhM2Y5MDU0NGYwNmExYzdlOGY0NTliZDhhZDBlYTU2NzlhMTBkNGU0NzQwYWE4ODg1Y2Q3YjAyMGZmNmUiLCJpYXQiOjE3MDg5ODk1MjEuNTc5MDY2LCJuYmYiOjE3MDg5ODk1MjEuNTc5MDY3LCJleHAiOjIzNDAxNDE1MjEuNTc0MDMxLCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.EArCjX2vvaYwPP4wLZAtydXyF9Q9yGUj8R2W9PyYNnRs7w57wdGh_pBRmE2AuT1yQIFTpA6E20ctxsss8Z6qlbxiFumWSGb-aNim6z-b3EI7hz87nDToPSjnH44-JSJSj9XCjR88Oo-iJmzw0a43JLFn-vFUbN3g8yWLI_-vSM5a0dWMgWdRrA-dj6WdzdRYe9KF5w6bgduUtvnkXV6qNJWcXvTUvC9Z9ln8lgGH_6oJpChEPMo7qrJcf77ujPwwaVAG5rowOsLpLAKgVSaxiYrWYh1C44SZsFj7pkN-dLI7upIeEqQx-13NE5v93RQhYYUcmGoO6Gsh23tZGht3Wk-LweGgvYKlswp9RA2wqwzi8CpH3GeLmKFr3_c2-wqK9QXay3L-0RG5b0cD5hydO8pYQbAnxivPxOomjeGKg9npcjsvVFQEijsFf0eC89neZT_UtCw18fstkWs0VcByI50FAuaG6K4pjUhw8o78ygo4uxIDqKFoj-PcIxkgVL-P_8hLF0w5h-xt-FCcKO7B4CKNfP_7GfUzVrwL3y5uVeWkGYEThUkd5X9vvvpgs6MScTam9F7dl4WWOoRveFKKZA_bcZbe7Oj97tk4njATHpaYW2vg__8MLRh4S14h33EcGROOQDglDVs9dfMEH_mOvB_PYAErMTfN4DVhof0IjkQ'
+          BATON_ACCESS_TOKEN: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI1IiwianRpIjoiMzA5OWY5ODFjZTIxMzU3NjAyM2M4NjNlYmU0MGQwZDQ4YTk1ZjQ5ODU5M2M2YzAxNjE1NzZhZmU1Mjk5MTFhMGUwMWVhNmU3NDg1YmI5YTgiLCJpYXQiOjE3MDg5OTE0MDcuMjkzNjUsIm5iZiI6MTcwODk5MTQwNy4yOTM2NTEsImV4cCI6MjM0MDE0MzQwNy4yODgyNjgsInN1YiI6IjEiLCJzY29wZXMiOltdfQ.e9qniz9XL9VGugQYTSfv8zqmbfm2yxBQp4rpsK1BXxDTfXqVCSnimLL7_h2QQ0gwwTV12WqCqHwDPhT5W6oR6xhS1ppcALmtlYYFBhFabpbqHC6ULmvzmTsYb1b4Yt6ynTRqt85BMXqVmwlGP5x8KearrJIa7jV4y0H-TN3RNnT92krmtslraXdRS8HABEerJKs5LFphkGM6gktxTJYFl6lkwHP4Ggk74XCfHO2gqEjvCT_TkjiyOD7fZu73sv3e-UKFnTfpqLqTsQE-9q6pO8WXGKjA5rww2Q_G2k2ICHHiane9Ij-VxM2QhFmnB6U_6ZbsMuRR2MN5H2AR27vcAGIOA3YgbWj-PQZAAhZOp0ctWwWWjYOO87UZ1BB27Sf50TiBGqIeKi0Dr2tfuCyynAs0q2Jd5yToYUobMYh8AFFVjGumDeFITYLf6BtMNuYBTSLHfHh4KtGjiJbRXfYpQbGq5jDjZpjthS7cq6KWadJEzOVgJ_bTrs2sCJTKo1WUF122oWWpHGk1bG6UlYzGRwlJHPvOclgeP7Zs8Q2ybP55hZiNKFtRTxwvLqb8BNSfx4q-mwrI30kZOyKX3oytkiHn5BFFhwtm9tVMiC0PlUG_ZP2h8gKyW575l9xYl-IjYUN_miRLTpw3t8f9Tyusdu-wOnV0_SHTBziNnHF19mg'
         run: ./baton-snipe-it --log-level=debug
       - name: Snipe logs
         if: always()
