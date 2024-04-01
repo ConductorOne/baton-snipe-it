@@ -2,6 +2,7 @@ package snipeit
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -60,7 +61,7 @@ func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...query
 	users := new(UsersResponse)
 	res, err := c.Do(req, uhttp.WithJSONResponse(users))
 	if err != nil {
-		ctxzap.Extract(ctx).Error("Failed to get users", zap.Error(err))
+		ctxzap.Extract(ctx).Error("Failed to get users", zap.Error(err), zap.String("request_url", req.URL.String()))
 		return nil, err
 	}
 	defer res.Body.Close()
@@ -69,7 +70,7 @@ func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...query
 }
 
 func (c *Client) GetUser(ctx context.Context, id int) (*User, error) {
-	stringUrl, err := url.JoinPath(c.baseUrl, "api/v1/users")
+	stringUrl, err := url.JoinPath(c.baseUrl, "api/v1/users", fmt.Sprintf("%d", id))
 	if err != nil {
 		return nil, err
 	}
