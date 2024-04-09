@@ -40,7 +40,7 @@ func (c *Client) Validate(ctx context.Context) error {
 		return err
 	}
 
-	req, err := c.NewRequest(ctx, http.MethodGet, u)
+	req, err := c.NewRequest(ctx, http.MethodGet, u, uhttp.WithAcceptJSONHeader())
 	if err != nil {
 		return err
 	}

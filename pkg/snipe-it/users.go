@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/uhttp"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	"go.uber.org/zap"
 )
 
 type (
@@ -35,20 +34,20 @@ type (
 	}
 )
 
-func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...queryFunction) (*UsersResponse, error) {
+func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...queryFunction) (*UsersResponse, *v2.RateLimitDescription, error) {
 	stringUrl, err := url.JoinPath(c.baseUrl, "api/v1/users")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	u, err := url.Parse(stringUrl)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	req, err := c.NewRequest(ctx, http.MethodGet, u)
+	req, err := c.NewRequest(ctx, http.MethodGet, u, uhttp.WithAcceptJSONHeader())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	query = append(query, WithOffset(offset), WithLimit(limit))
@@ -58,15 +57,17 @@ func (c *Client) GetUsers(ctx context.Context, offset, limit int, query ...query
 		query...,
 	)
 
+	var rldata v2.RateLimitDescription
 	users := new(UsersResponse)
-	res, err := c.Do(req, uhttp.WithJSONResponse(users))
-	if err != nil {
-		ctxzap.Extract(ctx).Error("Failed to get users", zap.Error(err), zap.String("request_url", req.URL.String()))
-		return nil, err
+	res, err := c.Do(req, uhttp.WithRatelimitData(&rldata), uhttp.WithJSONResponse(users))
+	if res != nil {
+		defer res.Body.Close()
 	}
-	defer res.Body.Close()
+	if err != nil {
+		return nil, &rldata, err
+	}
 
-	return users, nil
+	return users, &rldata, nil
 }
 
 func (c *Client) GetUser(ctx context.Context, id int) (*User, error) {
@@ -80,7 +81,7 @@ func (c *Client) GetUser(ctx context.Context, id int) (*User, error) {
 		return nil, err
 	}
 
-	req, err := c.NewRequest(ctx, http.MethodGet, u)
+	req, err := c.NewRequest(ctx, http.MethodGet, u, uhttp.WithAcceptJSONHeader())
 	if err != nil {
 		return nil, err
 	}

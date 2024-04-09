@@ -66,19 +66,23 @@ func (g *groupResourceType) Entitlements(ctx context.Context, resource *v2.Resou
 }
 
 func (g *groupResourceType) Grants(ctx context.Context, resource *v2.Resource, pagination *pagination.Token) ([]*v2.Grant, string, annotations.Annotations, error) {
+	annos := annotations.Annotations{}
 	bag, offset, err := parsePageToken(pagination.Token, &v2.ResourceId{ResourceType: resourceTypeUser.Id})
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", annos, err
 	}
 
 	groupID, err := strconv.Atoi(resource.Id.Resource)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", annos, err
 	}
 
-	users, err := g.client.GetUsers(ctx, offset, resourcePageSize, snipeit.WithGroupId(groupID))
+	users, rldata, err := g.client.GetUsers(ctx, offset, resourcePageSize, snipeit.WithGroupId(groupID))
+	if rldata != nil {
+		annos.Append(rldata)
+	}
 	if err != nil {
-		return nil, "", nil, wrapError(err, "Failed to get users")
+		return nil, "", annos, wrapError(err, "Failed to get users")
 	}
 
 	var rv []*v2.Grant
@@ -90,7 +94,7 @@ func (g *groupResourceType) Grants(ctx context.Context, resource *v2.Resource, p
 		user := user
 		userResource, err := userResource(ctx, &user)
 		if err != nil {
-			return nil, "", nil, err
+			return nil, "", annos, err
 		}
 
 		grant := grant.NewGrant(resource, memberEntitlement, userResource.Id)
@@ -98,15 +102,15 @@ func (g *groupResourceType) Grants(ctx context.Context, resource *v2.Resource, p
 	}
 
 	if isLastPage(len(users.Rows), resourcePageSize) {
-		return rv, "", nil, nil
+		return rv, "", annos, nil
 	}
 
 	nextPage, err := handleNextPage(bag, offset+resourcePageSize)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", annos, err
 	}
 
-	return rv, nextPage, nil, nil
+	return rv, nextPage, annos, nil
 }
 
 func newGroupBuilder(client *snipeit.Client) *groupResourceType {
@@ -116,10 +120,14 @@ func newGroupBuilder(client *snipeit.Client) *groupResourceType {
 	}
 }
 
-func (g *groupResourceType) List(ctx context.Context, _ *v2.ResourceId, _ *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
-	groups, err := g.client.GetAllGroups(ctx)
+func (g *groupResourceType) List(ctx context.Context, _ *v2.ResourceId, pt *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
+	annos := annotations.Annotations{}
+	groups, rldata, err := g.client.GetAllGroups(ctx)
+	if rldata != nil {
+		annos.Append(rldata)
+	}
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", annos, err
 	}
 
 	var resources []*v2.Resource
@@ -127,13 +135,13 @@ func (g *groupResourceType) List(ctx context.Context, _ *v2.ResourceId, _ *pagin
 		group := group
 		resource, err := groupResource(ctx, &group)
 		if err != nil {
-			return nil, "", nil, err
+			return nil, "", annos, err
 		}
 
 		resources = append(resources, resource)
 	}
 
-	return resources, "", nil, nil
+	return resources, "", annos, nil
 }
 
 func (g *groupResourceType) Grant(ctx context.Context, principal *v2.Resource, entitlement *v2.Entitlement) (annotations.Annotations, error) {

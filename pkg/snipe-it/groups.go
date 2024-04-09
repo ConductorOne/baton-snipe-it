@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/uhttp"
 )
 
@@ -22,30 +23,36 @@ type (
 	}
 )
 
-func (c *Client) GetAllGroups(ctx context.Context) (*GroupsResponse, error) {
+func (c *Client) GetAllGroups(ctx context.Context) (*GroupsResponse, *v2.RateLimitDescription, error) {
 	stringUrl, err := url.JoinPath(c.baseUrl, "api/v1/groups")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	u, err := url.Parse(stringUrl)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	req, err := c.NewRequest(ctx, http.MethodGet, u)
+	req, err := c.NewRequest(ctx, http.MethodGet, u, uhttp.WithAcceptJSONHeader())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	groups := new(GroupsResponse)
-	res, err := c.Do(req, uhttp.WithJSONResponse(groups))
-	if err != nil {
-		return nil, err
+	var rldata v2.RateLimitDescription
+	res, err := c.Do(req, uhttp.WithRatelimitData(&rldata), uhttp.WithJSONResponse(groups))
+	if res != nil {
+		defer res.Body.Close()
+		if res.StatusCode == http.StatusTooManyRequests {
+			return groups, &rldata, nil
+		}
 	}
-	defer res.Body.Close()
+	if err != nil {
+		return nil, &rldata, err
+	}
 
-	return groups, nil
+	return groups, &rldata, nil
 }
 
 func (x GroupsResponse) ContainsGroup(id int) bool {
