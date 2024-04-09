@@ -74,14 +74,18 @@ func getUserStatus(u *snipeit.User) v2.UserTrait_Status_Status {
 }
 
 func (o *userResourceType) List(ctx context.Context, _ *v2.ResourceId, pt *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
+	annos := annotations.Annotations{}
 	bag, offset, err := parsePageToken(pt.Token, &v2.ResourceId{ResourceType: o.resourceType.Id})
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", annos, err
 	}
 
-	users, err := o.client.GetUsers(ctx, offset, resourcePageSize)
+	users, rldata, err := o.client.GetUsers(ctx, offset, resourcePageSize)
+	if rldata != nil {
+		annos.Append(rldata)
+	}
 	if err != nil {
-		return nil, "", nil, wrapError(err, "Failed to get users")
+		return nil, "", annos, wrapError(err, "Failed to get users")
 	}
 
 	var resources []*v2.Resource
@@ -89,22 +93,22 @@ func (o *userResourceType) List(ctx context.Context, _ *v2.ResourceId, pt *pagin
 		user := user
 		resource, err := userResource(ctx, &user)
 		if err != nil {
-			return nil, "", nil, err
+			return nil, "", annos, err
 		}
 
 		resources = append(resources, resource)
 	}
 
 	if isLastPage(len(users.Rows), resourcePageSize) {
-		return resources, "", nil, nil
+		return resources, "", annos, nil
 	}
 
 	nextPage, err := handleNextPage(bag, offset+resourcePageSize)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", annos, err
 	}
 
-	return resources, nextPage, nil, nil
+	return resources, nextPage, annos, nil
 }
 
 func (o *userResourceType) Entitlements(_ context.Context, resource *v2.Resource, _ *pagination.Token) ([]*v2.Entitlement, string, annotations.Annotations, error) {

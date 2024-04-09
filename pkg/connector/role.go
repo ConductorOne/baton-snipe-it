@@ -57,12 +57,13 @@ func roleResource(ctx context.Context, role string) (*v2.Resource, error) {
 }
 
 func (r *roleResourceType) Entitlements(ctx context.Context, resource *v2.Resource, pagination *pagination.Token) ([]*v2.Entitlement, string, annotations.Annotations, error) {
+	annos := annotations.Annotations{}
 	bag, offset, err := parsePageToken(
 		pagination.Token,
 		&v2.ResourceId{ResourceType: resourceTypeUser.Id},
 	)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", annos, err
 	}
 
 	var rv []*v2.Entitlement
@@ -70,50 +71,56 @@ func (r *roleResourceType) Entitlements(ctx context.Context, resource *v2.Resour
 	if isAdminRole(resource.Id.Resource) {
 		rv = append(rv, r.getAppointedEntitlement(resource)...)
 
-		return rv, "", nil, nil
+		return rv, "", annos, nil
 	}
 
 	if offset == 0 {
 		// Groups doesn't have pagination, so we need to get all groups and iterate over them just once
-		groups, err := r.client.GetAllGroups(ctx)
+		groups, rldata, err := r.client.GetAllGroups(ctx)
+		if rldata != nil {
+			annos.Append(rldata)
+		}
 		if err != nil {
-			return nil, "", nil, wrapError(err, "Failed to get groups")
+			return nil, "", annos, wrapError(err, "Failed to get groups")
 		}
 
 		for _, group := range groups.Rows {
 			entitlements, err := r.getPermissionEntitlements(group.Permissions, resource, resourceTypeGroup)
 			if err != nil {
-				return nil, "", nil, wrapError(err, "Failed to get group permissions")
+				return nil, "", annos, wrapError(err, "Failed to get group permissions")
 			}
 
 			rv = append(rv, entitlements...)
 		}
 	}
 
-	users, err := r.client.GetUsers(ctx, offset, resourcePageSize)
+	users, rldata, err := r.client.GetUsers(ctx, offset, resourcePageSize)
+	if rldata != nil {
+		annos.Append(rldata)
+	}
 	if err != nil {
-		return nil, "", nil, wrapError(err, "Failed to get users")
+		return nil, "", annos, wrapError(err, "Failed to get users")
 	}
 
 	for _, user := range users.Rows {
 		entitlements, err := r.getPermissionEntitlements(user.Permissions, resource, resourceTypeUser)
 		if err != nil {
-			return nil, "", nil, wrapError(err, "Failed to get user permissions")
+			return nil, "", annos, wrapError(err, "Failed to get user permissions")
 		}
 
 		rv = append(rv, entitlements...)
 	}
 
 	if isLastPage(len(users.Rows), resourcePageSize) {
-		return rv, "", nil, nil
+		return rv, "", annos, nil
 	}
 
 	nextPage, err := handleNextPage(bag, offset+resourcePageSize)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", annos, err
 	}
 
-	return rv, nextPage, nil, nil
+	return rv, nextPage, annos, nil
 }
 
 func (r *roleResourceType) getPermissionEntitlements(permissions snipeit.Permissions, resource *v2.Resource, resourceType *v2.ResourceType) ([]*v2.Entitlement, error) {
@@ -197,69 +204,76 @@ func (r *roleResourceType) getAppointedEntitlement(resource *v2.Resource) []*v2.
 }
 
 func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pagination *pagination.Token) ([]*v2.Grant, string, annotations.Annotations, error) {
+	annos := annotations.Annotations{}
 	bag, offset, err := parsePageToken(
 		pagination.Token,
 		&v2.ResourceId{ResourceType: resourceTypeUser.Id},
 	)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", annos, err
 	}
 
 	var rv []*v2.Grant
 
 	if offset == 0 {
 		// Groups doesn't have pagination, so we need to get all groups and iterate over them just once
-		groups, err := r.client.GetAllGroups(ctx)
+		groups, rldata, err := r.client.GetAllGroups(ctx)
+		if rldata != nil {
+			annos.Append(rldata)
+		}
 		if err != nil {
-			return nil, "", nil, wrapError(err, "Failed to get groups")
+			return nil, "", annos, wrapError(err, "Failed to get groups")
 		}
 
 		for _, group := range groups.Rows {
 			group := group
 			groupResource, err := groupResource(ctx, &group)
 			if err != nil {
-				return nil, "", nil, wrapError(err, "Failed to get group resource")
+				return nil, "", annos, wrapError(err, "Failed to get group resource")
 			}
 
 			grants, err := r.getGrantsFromPermissions(group.Permissions, resource, groupResource)
 			if err != nil {
-				return nil, "", nil, wrapError(err, "Failed to get group grants")
+				return nil, "", annos, wrapError(err, "Failed to get group grants")
 			}
 
 			rv = append(rv, grants...)
 		}
 	}
 
-	users, err := r.client.GetUsers(ctx, offset, resourcePageSize)
+	users, rldata, err := r.client.GetUsers(ctx, offset, resourcePageSize)
+	if rldata != nil {
+		annos.Append(rldata)
+	}
 	if err != nil {
-		return nil, "", nil, wrapError(err, "Failed to get users")
+		return nil, "", annos, wrapError(err, "Failed to get users")
 	}
 
 	for _, user := range users.Rows {
 		user := user
 		userResource, err := userResource(ctx, &user)
 		if err != nil {
-			return nil, "", nil, wrapError(err, "Failed to get user resource")
+			return nil, "", annos, wrapError(err, "Failed to get user resource")
 		}
 
 		grants, err := r.getGrantsFromPermissions(user.Permissions, resource, userResource)
 		if err != nil {
-			return nil, "", nil, wrapError(err, "Failed to get user grants")
+			return nil, "", annos, wrapError(err, "Failed to get user grants")
 		}
 
 		rv = append(rv, grants...)
 	}
 
 	if isLastPage(len(users.Rows), resourcePageSize) {
-		return rv, "", nil, nil
+		return rv, "", annos, nil
 	}
 
 	nextPage, err := handleNextPage(bag, offset+resourcePageSize)
 	if err != nil {
-		return nil, "", nil, err
+		return nil, "", annos, err
 	}
 
-	return nil, nextPage, nil, nil
+	return nil, nextPage, annos, nil
 }
 
 func (r *roleResourceType) getGrantsFromPermissions(permissions snipeit.Permissions, roleResource *v2.Resource, resource *v2.Resource) ([]*v2.Grant, error) {
