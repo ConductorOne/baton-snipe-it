@@ -237,7 +237,17 @@ func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pa
 				return nil, "", annos, wrapError(err, "Failed to get group grants")
 			}
 
-			rv = append(rv, grants...)
+			for _, g := range grants {
+				annos := annotations.Annotations(g.Annotations)
+				annos.Update(&v2.GrantExpandable{
+					EntitlementIds: []string{
+						ent.NewEntitlementID(groupResource, "member"),
+					},
+					Shallow:         true,
+					ResourceTypeIds: []string{resourceTypeUser.Id},
+				})
+				rv = append(rv, g)
+			}
 		}
 	}
 
