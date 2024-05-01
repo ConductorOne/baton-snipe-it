@@ -273,7 +273,7 @@ func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pa
 		return nil, "", annos, err
 	}
 
-	return nil, nextPage, annos, nil
+	return rv, nextPage, annos, nil
 }
 
 func (r *roleResourceType) getGrantsFromPermissions(permissions snipeit.Permissions, roleResource *v2.Resource, resource *v2.Resource) ([]*v2.Grant, error) {
