@@ -225,14 +225,13 @@ func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pa
 			return nil, "", annos, wrapError(err, "Failed to get groups")
 		}
 
-		for _, group := range groups.Rows {
-			group := group
-			groupResource, err := groupResource(ctx, &group)
+		for _, grp := range groups.Rows {
+			groupResource, err := groupResource(ctx, &grp)
 			if err != nil {
 				return nil, "", annos, wrapError(err, "Failed to get group resource")
 			}
 
-			grants, err := r.getGrantsFromPermissions(group.Permissions, resource, groupResource)
+			grants, err := r.getGrantsFromPermissions(grp.Permissions, resource, groupResource)
 			if err != nil {
 				return nil, "", annos, wrapError(err, "Failed to get group grants")
 			}
