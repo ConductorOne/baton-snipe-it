@@ -55,7 +55,7 @@ func (c *Client) Validate(ctx context.Context) error {
 	res, err := c.Do(req)
 	if err != nil {
 		baseUrl := strings.TrimSuffix(c.baseUrl, "/")
-		if res.StatusCode == 404 && strings.HasSuffix(baseUrl, "api/v1") {
+		if res.StatusCode == http.StatusNotFound && strings.HasSuffix(baseUrl, "api/v1") {
 			c.baseUrl = strings.TrimSuffix(baseUrl, "api/v1")
 			return c.Validate(ctx)
 		}
