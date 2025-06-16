@@ -54,19 +54,23 @@ func (c *Client) Validate(ctx context.Context) error {
 
 	res, err := c.Do(req)
 	if err != nil {
-		baseUrl := strings.TrimSuffix(c.baseUrl, "/")
-		if res.StatusCode == http.StatusNotFound && strings.HasSuffix(baseUrl, "api/v1") {
-			c.baseUrl = strings.TrimSuffix(baseUrl, "api/v1")
-			return c.Validate(ctx)
-		}
+		if res != nil {
+			baseUrl := strings.TrimSuffix(c.baseUrl, "/")
+			if res.StatusCode == http.StatusNotFound && strings.HasSuffix(baseUrl, "api/v1") {
+				c.baseUrl = strings.TrimSuffix(baseUrl, "api/v1")
+				return c.Validate(ctx)
+			}
 
-		bodyBytes, err := io.ReadAll(res.Body)
-		if err != nil {
-			return err
-		}
-		bodyString := string(bodyBytes)
+			bodyBytes, err := io.ReadAll(res.Body)
+			if err != nil {
+				return err
+			}
+			bodyString := string(bodyBytes)
 
-		l.Error("Failed to validate API", zap.Error(err), zap.Any("response", res), zap.String("body", bodyString))
+			l.Error("Failed to validate API", zap.Error(err), zap.Any("response", res), zap.String("body", bodyString))
+		} else {
+			l.Error("Failed to validate API", zap.Error(err))
+		}
 		return err
 	}
 	defer res.Body.Close()
