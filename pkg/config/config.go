@@ -14,6 +14,7 @@ var (
 	AccessTokenField = field.StringField(
 		"access-token",
 		field.WithDescription("API key for the snipe-it instance"),
+		field.WithIsSecret(true),
 		field.WithRequired(true),
 	)
 
