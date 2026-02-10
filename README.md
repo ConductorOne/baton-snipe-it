@@ -1,6 +1,6 @@
 ![Baton Logo](./docs/images/baton-logo.png)
 
-# `baton-snipe-it` [![Go Reference](https://pkg.go.dev/badge/github.com/conductorone/baton-snipe-it.svg)](https://pkg.go.dev/github.com/conductorone/baton-snipe-it) ![main ci](https://github.com/conductorone/baton-snipe-it/actions/workflows/main.yaml/badge.svg)
+# `baton-snipe-it` [![Go Reference](https://pkg.go.dev/badge/github.com/conductorone/baton-snipe-it.svg)](https://pkg.go.dev/github.com/conductorone/baton-snipe-it) ![ci](https://github.com/conductorone/baton-snipe-it/actions/workflows/ci.yaml/badge.svg) ![verify](https://github.com/conductorone/baton-snipe-it/actions/workflows/verify.yaml/badge.svg)
 
 `baton-snipe-it` is a connector for Baton built using the [Baton SDK](https://github.com/conductorone/baton-sdk). It works with Snipe-IT V6 API.
 
@@ -8,7 +8,7 @@ Check out [Baton](https://github.com/conductorone/baton) to learn more about the
 
 # Prerequisites
 
-Connector requires bearer access token that is used throughout the communication with API. To obtain this token, you have to create one in Snipe-IT. More in information about how to generate token [here](https://snipe-it.readme.io/reference/generating-api-tokens)). 
+Connector requires bearer access token that is used throughout the communication with API. To obtain this token, you have to create one in Snipe-IT. More in information about how to generate token [here](https://snipe-it.readme.io/reference/generating-api-tokens)).
 
 After you have obtained access token, you can use it with connector. You can do this by setting `BATON_ACCESS_TOKEN` or by passing `--access-token`.
 
