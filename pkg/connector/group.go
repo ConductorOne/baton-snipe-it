@@ -39,10 +39,9 @@ func groupResource(ctx context.Context, group *snipeit.Group) (*v2.Resource, err
 		"group_id": group.ID,
 	}
 
-	groupTraitOptions := []rs.GroupTraitOption{
-		rs.WithGroupProfile(profile),
-	}
-	resource, err := rs.NewGroupResource(group.Name, resourceTypeGroup, group.ID, groupTraitOptions)
+	groupTraitOptions := []rs.GroupTraitOption{}
+	resource, err := rs.NewGroupResource(group.Name, resourceTypeGroup, group.ID, groupTraitOptions,
+		rs.WithResourceProfile(profile))
 	if err != nil {
 		return nil, err
 	}
