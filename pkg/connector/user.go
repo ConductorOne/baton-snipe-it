@@ -50,14 +50,14 @@ func userResource(ctx context.Context, user *snipeit.User) (*v2.Resource, error)
 	}
 
 	userTraitOptions := []rs.UserTraitOption{
-		rs.WithUserProfile(profile),
 		rs.WithEmail(user.Email, true),
 		rs.WithUserLogin(user.Username),
-		rs.WithStatus(getUserStatus(user)),
 	}
 
 	fullName := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
-	resource, err := rs.NewUserResource(fullName, resourceTypeUser, user.ID, userTraitOptions)
+	resource, err := rs.NewUserResource(fullName, resourceTypeUser, user.ID, userTraitOptions,
+		rs.WithResourceProfile(profile),
+		rs.WithResourceStatus(v2.Status_ResourceStatus(getUserStatus(user)), ""))
 	if err != nil {
 		return nil, err
 	}
