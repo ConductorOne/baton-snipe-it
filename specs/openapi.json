@@ -1,0 +1,232 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Snipe-IT API (baton-snipe-it connector surface)",
+    "version": "1.0.0",
+    "description": "Describes only the Snipe-IT endpoints baton-snipe-it calls. Scope is derived from pkg/snipe-it/client.go, users.go, and groups.go; response shapes are derived from the structs in those files and settled against Snipe-IT's own source, which is the authoritative reference for a self-hosted open-source application — app/Http/Transformers/UsersTransformer.php, GroupsTransformer.php, DatatablesTransformer.php, app/Http/Controllers/Api/GroupsController.php, and app/Http/Middleware/SetPaginationDefaults.php on the master branch (accessed 2026-09-23), cross-checked against snipe-it.readme.io.\n\nOnly the properties the connector's structs declare are modelled. Snipe-IT's user transformer alone returns roughly fifty; the omissions are deliberate — spec scope is connector scope.\n\nServer: the instance's own base URL, supplied by config. The connector appends `api/v1` to it, and self-heals if the operator already included that suffix — see the note on validateCredentials.\n\nAuth: a Snipe-IT personal API token sent as `Authorization: Bearer`.\n\nPagination: `limit`/`offset` on the users listing, with the connector pinning `limit` at 50 and stopping when a page comes back short. The groups listing is called with neither parameter — see the note on that operation."
+  },
+  "servers": [
+    {
+      "url": "{baseUrl}",
+      "description": "The Snipe-IT instance, from the connector's base-URL config. `api/v1` is appended by the client.",
+      "variables": { "baseUrl": { "default": "https://snipe-it.example.com", "description": "Instance base URL, without the api/v1 suffix." } }
+    }
+  ],
+  "security": [{ "bearerAuth": [] }],
+  "tags": [
+    { "name": "users", "description": "Users, their group memberships, and their permission maps." },
+    { "name": "groups", "description": "Groups and their permission maps." }
+  ],
+  "paths": {
+    "/api/v1/users": {
+      "get": {
+        "operationId": "listUsers",
+        "tags": ["users"],
+        "summary": "List users",
+        "description": "The workhorse of this connector. It backs user resources (pkg/connector/user.go:83), group membership grants (pkg/connector/group.go:79, filtered by `group_id`), and both the entitlements and the grants derived from per-user permission maps (pkg/connector/role.go:96 and :254).\n\nIt is also the credential-validation probe, called with `limit=1` (pkg/snipe-it/client.go:31).\n\n`limit` and `offset` are always sent, `limit` pinned at 50. The connector never reads the `total` it gets back — it stops when a page returns fewer rows than it asked for. That is correct for a stable collection but will end the walk early if a user is deleted mid-sync.\n\n`group_id` is sent only when listing a group's members, and it is what makes group membership discoverable at all: there is no list-members-of-group route in this surface.\n\nSnipe-IT accepts many more filters here — `search`, `sort`, `order`, `deleted`, `all`, `company_id`, `location_id`, and others. The connector sends none of them, so it syncs with Snipe-IT's defaults: active users only, ordered by `created_at desc`.",
+        "externalDocs": { "url": "https://snipe-it.readme.io/reference/users" },
+        "parameters": [
+          { "$ref": "#/components/parameters/Limit" },
+          { "$ref": "#/components/parameters/Offset" },
+          {
+            "name": "group_id",
+            "in": "query",
+            "required": false,
+            "description": "Restrict the listing to members of one group. Sent only when enumerating a group's members; this is the connector's only route to group membership.",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of users.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UsersResponse" }
+              }
+            }
+          },
+          "401": { "description": "The API token was rejected." },
+          "403": { "description": "The token's user lacks `users.view`." }
+        }
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "operationId": "getUser",
+        "tags": ["users"],
+        "summary": "Get a single user",
+        "description": "Called only as the read half of the read-modify-write that group provisioning requires (pkg/snipe-it/groups.go:68 and :106). Snipe-IT has no add-member or remove-member route; the only way to change membership is to PATCH the user's whole group list, so the current list has to be fetched first.\n\nThis makes both provisioning operations non-atomic: a concurrent membership change between the GET and the PATCH is silently overwritten.\n\nUnlike the listing, this returns a bare user object — no `total`/`rows` envelope.",
+        "externalDocs": { "url": "https://snipe-it.readme.io/reference/users" },
+        "parameters": [
+          { "$ref": "#/components/parameters/UserId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "The user.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          },
+          "401": { "description": "The API token was rejected." },
+          "403": { "description": "The token's user lacks `users.view`." },
+          "404": { "description": "No such user." }
+        }
+      },
+      "patch": {
+        "operationId": "updateUserGroups",
+        "tags": ["users"],
+        "summary": "Replace a user's group memberships",
+        "description": "Backs both granting and revoking group membership (pkg/snipe-it/groups.go:68 and :106). The body carries `groups` and nothing else — a full replacement of the user's group list, computed client-side from the getUser response:\n\n- **Grant** sends the requested group ID followed by every group the user already had. If the user was already a member, the ID appears twice in the array; Snipe-IT's sync of the pivot table makes that harmless, but the connector does not check membership first.\n- **Revoke** sends every existing group except the one being removed. Removing a user's last group sends an empty array, which `omitempty` on the struct tag then drops from the JSON entirely — so the request body serialises to `{}` and Snipe-IT has no `groups` key to act on. The revoke silently does nothing in that case.\n\nSnipe-IT's PATCH accepts many other user fields; the connector sends only `groups`.\n\nThe response is not decoded.",
+        "externalDocs": { "url": "https://snipe-it.readme.io/reference/users" },
+        "parameters": [
+          { "$ref": "#/components/parameters/UserId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PatchUserBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "User updated. Body not decoded by the connector." },
+          "401": { "description": "The API token was rejected." },
+          "403": { "description": "The token's user lacks permission to edit this user." },
+          "404": { "description": "No such user." }
+        }
+      }
+    },
+    "/api/v1/groups": {
+      "get": {
+        "operationId": "listGroups",
+        "tags": ["groups"],
+        "summary": "List groups",
+        "description": "Source of the connector's group resources (pkg/connector/group.go:124) and of the entitlements and grants derived from per-group permission maps (pkg/connector/role.go:78 and :219).\n\n**This route is paginated, and the connector sends no pagination parameters.** `GroupsController::index` reads `app('api_limit_value')`, which `SetPaginationDefaults` sets to `config('app.max_results')` — the instance's `MAX_RESULTS`, default 500 — whenever no `limit` is supplied. A request with no `limit` therefore returns at most that many groups, not all of them. The connector decodes the `total` the response carries but never compares it against the number of rows, and the comment at role.go:77 records the opposite belief: \"Groups doesn't have pagination.\" An instance with more groups than its `MAX_RESULTS` silently syncs only the first page.\n\nThe route also requires the token's user to be a **superadmin**: `GroupsController::index` calls `authorize('superadmin')` before anything else. A token belonging to a non-superadmin gets a 403 here even if it can read users perfectly well.\n\nSnipe-IT's transformer returns `users_count`, `notes`, `created_by`, `created_at`, and `updated_at` alongside the three properties the connector decodes.\n\nOne quirk of the client is worth recording: on HTTP 429 it returns the partially-decoded response and a nil error rather than propagating the rate-limit failure, so a throttled groups call reads as an empty group list rather than an error.",
+        "externalDocs": { "url": "https://snipe-it.readme.io/reference/groups" },
+        "responses": {
+          "200": {
+            "description": "A page of groups — capped at the instance's MAX_RESULTS because no limit is sent.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GroupsResponse" }
+              }
+            }
+          },
+          "401": { "description": "The API token was rejected." },
+          "403": { "description": "The token's user is not a superadmin." },
+          "429": { "description": "Rate limited. The client swallows this and returns an empty group list with no error." }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Snipe-IT personal API token, attached by uhttp.NewBearerAuth."
+      }
+    },
+    "parameters": {
+      "UserId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Numeric user ID — `User.id`, which is also the connector's user resource ID.",
+        "schema": { "type": "integer" }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "description": "Rows per page. The connector pins this at 50 for syncs and 1 for the validation probe. When omitted, Snipe-IT substitutes the instance's MAX_RESULTS (default 500); a requested value above MAX_RESULTS is ignored in favour of MAX_RESULTS.",
+        "schema": { "type": "integer", "minimum": 1 },
+        "example": 50
+      },
+      "Offset": {
+        "name": "offset",
+        "in": "query",
+        "required": false,
+        "description": "Rows to skip. Always sent, starting at 0 and advancing by 50.",
+        "schema": { "type": "integer", "minimum": 0 },
+        "example": 0
+      }
+    },
+    "schemas": {
+      "UsersResponse": {
+        "type": "object",
+        "description": "Snipe-IT's shared list envelope. It also carries `current_page`, `per_page`, `total_pages`, `prev_page_url`, and `next_page_url`; the connector decodes none of them and paginates by offset arithmetic instead.",
+        "properties": {
+          "total": { "type": "integer", "format": "int64", "description": "Total matching users. Decoded but never read — the walk terminates on a short page instead." },
+          "rows": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }
+        }
+      },
+      "GroupsResponse": {
+        "type": "object",
+        "description": "The same list envelope for groups. Also used as the shape of a user's nested `groups` object, which carries the same `total`/`rows` pair but whose rows hold only `id` and `name`.",
+        "properties": {
+          "total": { "type": "integer", "description": "Total groups on the instance. Decoded but never compared against the number of rows returned, which is what hides the truncation described on listGroups." },
+          "rows": { "type": "array", "items": { "$ref": "#/components/schemas/Group" } }
+        }
+      },
+      "User": {
+        "type": "object",
+        "description": "A Snipe-IT user. Snipe-IT's transformer returns roughly fifty properties; only the ten the connector declares are listed here.",
+        "properties": {
+          "id": { "type": "integer", "description": "Numeric ID. The connector's user resource ID and the path parameter for the provisioning read-modify-write — parity-critical." },
+          "username": { "type": "string", "description": "Login name." },
+          "first_name": { "type": "string", "description": "Given name." },
+          "last_name": { "type": "string", "description": "Family name." },
+          "email": { "type": "string", "description": "Email address. Snipe-IT permits users without one." },
+          "employee_num": { "type": "string", "description": "Employee number. Null upstream when unset, which decodes to the empty string here." },
+          "vip": { "type": "boolean", "description": "VIP flag." },
+          "activated": { "type": "boolean", "description": "Whether the account is active. Drives the user's enabled/disabled status." },
+          "groups": {
+            "$ref": "#/components/schemas/GroupsResponse",
+            "description": "The user's groups, in the same total/rows envelope. Snipe-IT emits **null** rather than an empty envelope when the user has no groups, which decodes into the zero-valued struct. The nested rows carry only `id` and `name` — no `permissions` — so the Permissions map on a nested group is always empty."
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/Permissions",
+            "description": "The user's own permission map, distinct from any inherited through groups. Drives role entitlements and grants — parity-critical."
+          }
+        }
+      },
+      "Group": {
+        "type": "object",
+        "description": "A Snipe-IT group. Snipe-IT also returns `users_count`, `notes`, `created_by`, `created_at`, and `updated_at`.",
+        "properties": {
+          "id": { "type": "integer", "description": "Numeric ID. The connector's group resource ID and the `group_id` filter value — parity-critical." },
+          "name": { "type": "string", "description": "Group name." },
+          "permissions": {
+            "$ref": "#/components/schemas/Permissions",
+            "description": "The group's permission map. Drives role entitlements and expandable grants — parity-critical. Populated on the groups listing; always empty on the copy nested inside a user."
+          }
+        }
+      },
+      "Permissions": {
+        "type": "object",
+        "description": "Snipe-IT's permission map: permission name to tri-state value. Snipe-IT stores this as a JSON blob on the row and `decodePermissions()` casts each value to an integer before returning it — but older rows and some code paths emit the values as strings. The connector's custom unmarshaller accepts either, decoding to a string in both cases, which is why the values below are typed as strings rather than integers.\n\nKeys are not a fixed set: they are whatever permission slugs the instance's version defines, plus the role-shaped keys (`superuser`, `admin`, `user`, `import`, `other`) the connector treats specially.",
+        "additionalProperties": {
+          "type": "string",
+          "description": "Tri-state permission value. `1` granted, `-1` denied, `0` inherited. Only `1` produces a grant; `0` and `-1` are both skipped.",
+          "enum": ["1", "0", "-1"]
+        },
+        "examples": [{ "superuser": "0", "admin": "1", "users.view": "1", "assets.delete": "-1" }]
+      },
+      "PatchUserBody": {
+        "type": "object",
+        "description": "Body of updateUserGroups. `groups` carries `omitempty`, so an empty array is dropped from the JSON entirely and the request body serialises to `{}` — see the note on the operation.",
+        "properties": {
+          "groups": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "description": "The user's complete new group list, computed client-side. Not a delta — whatever is sent replaces the existing memberships."
+          }
+        }
+      }
+    }
+  }
+}
