@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mysql:
-        image: mysql:8.0
+        image: mysql:8
         ports:
           - "3306:3306"
         env:
@@ -40,13 +40,13 @@ jobs:
           PHP_UPLOAD_LIMIT: 100
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
       - name: Install mysql client
-        run: sudo apt install mysql-client-8.0
+        run: sudo apt install mysql-client
       - name: Fix keys
         run: docker exec $(docker ps --filter='ancestor=snipe/snipe-it:v6.3.1' --format='{{.ID}}') bash -c 'php artisan passport:install'
       - name: Initialize database for snipe-it
