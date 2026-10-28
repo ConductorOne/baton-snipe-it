@@ -7,9 +7,11 @@ import (
 
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
+	"github.com/conductorone/baton-sdk/pkg/cli"
 	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
 	"github.com/conductorone/baton-sdk/pkg/uhttp"
 
+	"github.com/conductorone/baton-snipe-it/pkg/config"
 	snipeit "github.com/conductorone/baton-snipe-it/pkg/snipe-it"
 )
 
@@ -18,8 +20,8 @@ type SnipeIt struct {
 }
 
 // ResourceSyncers returns a ResourceSyncer for each resource type that should be synced from the upstream service.
-func (d *SnipeIt) ResourceSyncers(ctx context.Context) []connectorbuilder.ResourceSyncer {
-	return []connectorbuilder.ResourceSyncer{
+func (d *SnipeIt) ResourceSyncers(ctx context.Context) []connectorbuilder.ResourceSyncerV2 {
+	return []connectorbuilder.ResourceSyncerV2{
 		newUserBuilder(d.client),
 		newGroupBuilder(d.client),
 		newRoleBuilder(d.client),
@@ -52,18 +54,18 @@ func (d *SnipeIt) Validate(ctx context.Context) (annotations.Annotations, error)
 }
 
 // New returns a new instance of the connector.
-func New(ctx context.Context, baseUrl string, accessToken string) (*SnipeIt, error) {
-	httpClient, err := uhttp.NewBearerAuth(accessToken).GetClient(ctx)
+func New(ctx context.Context, cfg *config.SnipeIt, _ *cli.ConnectorOpts) (connectorbuilder.ConnectorBuilderV2, []connectorbuilder.Opt, error) {
+	httpClient, err := uhttp.NewBearerAuth(cfg.AccessToken).GetClient(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	u, err := url.Parse(baseUrl)
+	u, err := url.Parse(cfg.BaseUrl)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	return &SnipeIt{
 		client: snipeit.New(u.String(), httpClient),
-	}, nil
+	}, nil, nil
 }

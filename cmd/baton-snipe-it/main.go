@@ -2,14 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/conductorone/baton-sdk/pkg/config"
-	"github.com/conductorone/baton-sdk/pkg/connectorbuilder"
-	"github.com/conductorone/baton-sdk/pkg/types"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	"go.uber.org/zap"
+	"github.com/conductorone/baton-sdk/pkg/connectorrunner"
 
 	cfg "github.com/conductorone/baton-snipe-it/pkg/config"
 	"github.com/conductorone/baton-snipe-it/pkg/connector"
@@ -20,40 +15,12 @@ var version = "dev"
 func main() {
 	ctx := context.Background()
 
-	_, cmd, err := config.DefineConfiguration(
+	config.RunConnector(
 		ctx,
 		"baton-snipe-it",
-		getConnector,
+		version,
 		cfg.Config,
+		connector.New,
+		connectorrunner.WithDefaultCapabilitiesConnectorBuilderV2(&connector.SnipeIt{}),
 	)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
-	}
-
-	cmd.Version = version
-
-	err = cmd.Execute()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
-	}
-}
-
-func getConnector(ctx context.Context, c *cfg.SnipeIt) (types.ConnectorServer, error) {
-	l := ctxzap.Extract(ctx)
-
-	cb, err := connector.New(ctx, c.BaseUrl, c.AccessToken)
-	if err != nil {
-		l.Error("error creating connector", zap.Error(err))
-		return nil, err
-	}
-
-	conn, err := connectorbuilder.NewConnector(ctx, cb)
-	if err != nil {
-		l.Error("error creating connector", zap.Error(err))
-		return nil, err
-	}
-
-	return conn, nil
 }
