@@ -7,7 +7,6 @@ import (
 
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
-	"github.com/conductorone/baton-sdk/pkg/pagination"
 	rs "github.com/conductorone/baton-sdk/pkg/types/resource"
 
 	snipeit "github.com/conductorone/baton-snipe-it/pkg/snipe-it"
@@ -73,11 +72,11 @@ func getUserStatus(u *snipeit.User) v2.UserTrait_Status_Status {
 	return v2.UserTrait_Status_STATUS_DISABLED
 }
 
-func (o *userResourceType) List(ctx context.Context, _ *v2.ResourceId, pt *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
+func (o *userResourceType) List(ctx context.Context, _ *v2.ResourceId, pt rs.SyncOpAttrs) ([]*v2.Resource, *rs.SyncOpResults, error) {
 	annos := annotations.Annotations{}
-	bag, offset, err := parsePageToken(pt.Token, &v2.ResourceId{ResourceType: o.resourceType.Id})
+	bag, offset, err := parsePageToken(pt.PageToken.Token, &v2.ResourceId{ResourceType: o.resourceType.Id})
 	if err != nil {
-		return nil, "", annos, err
+		return nil, &rs.SyncOpResults{Annotations: annos}, err
 	}
 
 	users, rldata, err := o.client.GetUsers(ctx, offset, resourcePageSize)
@@ -85,7 +84,7 @@ func (o *userResourceType) List(ctx context.Context, _ *v2.ResourceId, pt *pagin
 		annos.Append(rldata)
 	}
 	if err != nil {
-		return nil, "", annos, wrapError(err, "Failed to get users")
+		return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get users")
 	}
 
 	var resources []*v2.Resource
@@ -93,30 +92,30 @@ func (o *userResourceType) List(ctx context.Context, _ *v2.ResourceId, pt *pagin
 		user := user
 		resource, err := userResource(ctx, &user)
 		if err != nil {
-			return nil, "", annos, err
+			return nil, &rs.SyncOpResults{Annotations: annos}, err
 		}
 
 		resources = append(resources, resource)
 	}
 
 	if isLastPage(len(users.Rows), resourcePageSize) {
-		return resources, "", annos, nil
+		return resources, &rs.SyncOpResults{Annotations: annos}, nil
 	}
 
 	nextPage, err := handleNextPage(bag, offset+resourcePageSize)
 	if err != nil {
-		return nil, "", annos, err
+		return nil, &rs.SyncOpResults{Annotations: annos}, err
 	}
 
-	return resources, nextPage, annos, nil
+	return resources, &rs.SyncOpResults{NextPageToken: nextPage, Annotations: annos}, nil
 }
 
-func (o *userResourceType) Entitlements(_ context.Context, resource *v2.Resource, _ *pagination.Token) ([]*v2.Entitlement, string, annotations.Annotations, error) {
-	return nil, "", nil, nil
+func (o *userResourceType) Entitlements(_ context.Context, resource *v2.Resource, _ rs.SyncOpAttrs) ([]*v2.Entitlement, *rs.SyncOpResults, error) {
+	return nil, nil, nil
 }
 
-func (o *userResourceType) Grants(ctx context.Context, resource *v2.Resource, pToken *pagination.Token) ([]*v2.Grant, string, annotations.Annotations, error) {
-	return nil, "", nil, nil
+func (o *userResourceType) Grants(ctx context.Context, resource *v2.Resource, pToken rs.SyncOpAttrs) ([]*v2.Grant, *rs.SyncOpResults, error) {
+	return nil, nil, nil
 }
 
 func newUserBuilder(client *snipeit.Client) *userResourceType {

@@ -7,7 +7,6 @@ import (
 
 	v2 "github.com/conductorone/baton-sdk/pb/c1/connector/v2"
 	"github.com/conductorone/baton-sdk/pkg/annotations"
-	"github.com/conductorone/baton-sdk/pkg/pagination"
 	ent "github.com/conductorone/baton-sdk/pkg/types/entitlement"
 	"github.com/conductorone/baton-sdk/pkg/types/grant"
 	rs "github.com/conductorone/baton-sdk/pkg/types/resource"
@@ -55,14 +54,14 @@ func roleResource(ctx context.Context, role string) (*v2.Resource, error) {
 	return resource, nil
 }
 
-func (r *roleResourceType) Entitlements(ctx context.Context, resource *v2.Resource, pagination *pagination.Token) ([]*v2.Entitlement, string, annotations.Annotations, error) {
+func (r *roleResourceType) Entitlements(ctx context.Context, resource *v2.Resource, pToken rs.SyncOpAttrs) ([]*v2.Entitlement, *rs.SyncOpResults, error) {
 	annos := annotations.Annotations{}
 	bag, offset, err := parsePageToken(
-		pagination.Token,
+		pToken.PageToken.Token,
 		&v2.ResourceId{ResourceType: resourceTypeUser.Id},
 	)
 	if err != nil {
-		return nil, "", annos, err
+		return nil, &rs.SyncOpResults{Annotations: annos}, err
 	}
 
 	var rv []*v2.Entitlement
@@ -70,7 +69,7 @@ func (r *roleResourceType) Entitlements(ctx context.Context, resource *v2.Resour
 	if isAdminRole(resource.Id.Resource) {
 		rv = append(rv, r.getAppointedEntitlement(resource)...)
 
-		return rv, "", annos, nil
+		return rv, &rs.SyncOpResults{Annotations: annos}, nil
 	}
 
 	if offset == 0 {
@@ -80,13 +79,13 @@ func (r *roleResourceType) Entitlements(ctx context.Context, resource *v2.Resour
 			annos.Append(rldata)
 		}
 		if err != nil {
-			return nil, "", annos, wrapError(err, "Failed to get groups")
+			return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get groups")
 		}
 
 		for _, group := range groups.Rows {
 			entitlements, err := r.getPermissionEntitlements(group.Permissions, resource, resourceTypeGroup)
 			if err != nil {
-				return nil, "", annos, wrapError(err, "Failed to get group permissions")
+				return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get group permissions")
 			}
 
 			rv = append(rv, entitlements...)
@@ -98,28 +97,28 @@ func (r *roleResourceType) Entitlements(ctx context.Context, resource *v2.Resour
 		annos.Append(rldata)
 	}
 	if err != nil {
-		return nil, "", annos, wrapError(err, "Failed to get users")
+		return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get users")
 	}
 
 	for _, user := range users.Rows {
 		entitlements, err := r.getPermissionEntitlements(user.Permissions, resource, resourceTypeUser)
 		if err != nil {
-			return nil, "", annos, wrapError(err, "Failed to get user permissions")
+			return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get user permissions")
 		}
 
 		rv = append(rv, entitlements...)
 	}
 
 	if isLastPage(len(users.Rows), resourcePageSize) {
-		return rv, "", annos, nil
+		return rv, &rs.SyncOpResults{Annotations: annos}, nil
 	}
 
 	nextPage, err := handleNextPage(bag, offset+resourcePageSize)
 	if err != nil {
-		return nil, "", annos, err
+		return nil, &rs.SyncOpResults{Annotations: annos}, err
 	}
 
-	return rv, nextPage, annos, nil
+	return rv, &rs.SyncOpResults{NextPageToken: nextPage, Annotations: annos}, nil
 }
 
 func (r *roleResourceType) getPermissionEntitlements(permissions snipeit.Permissions, resource *v2.Resource, resourceType *v2.ResourceType) ([]*v2.Entitlement, error) {
@@ -202,14 +201,14 @@ func (r *roleResourceType) getAppointedEntitlement(resource *v2.Resource) []*v2.
 	return rv
 }
 
-func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pagination *pagination.Token) ([]*v2.Grant, string, annotations.Annotations, error) {
+func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pToken rs.SyncOpAttrs) ([]*v2.Grant, *rs.SyncOpResults, error) {
 	annos := annotations.Annotations{}
 	bag, offset, err := parsePageToken(
-		pagination.Token,
+		pToken.PageToken.Token,
 		&v2.ResourceId{ResourceType: resourceTypeUser.Id},
 	)
 	if err != nil {
-		return nil, "", annos, err
+		return nil, &rs.SyncOpResults{Annotations: annos}, err
 	}
 
 	var rv []*v2.Grant
@@ -221,19 +220,19 @@ func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pa
 			annos.Append(rldata)
 		}
 		if err != nil {
-			return nil, "", annos, wrapError(err, "Failed to get groups")
+			return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get groups")
 		}
 
 		for _, group := range groups.Rows {
 			group := group
 			groupResource, err := groupResource(ctx, &group)
 			if err != nil {
-				return nil, "", annos, wrapError(err, "Failed to get group resource")
+				return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get group resource")
 			}
 
 			grants, err := r.getGrantsFromPermissions(group.Permissions, resource, groupResource)
 			if err != nil {
-				return nil, "", annos, wrapError(err, "Failed to get group grants")
+				return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get group grants")
 			}
 
 			for _, g := range grants {
@@ -256,34 +255,34 @@ func (r *roleResourceType) Grants(ctx context.Context, resource *v2.Resource, pa
 		annos.Append(rldata)
 	}
 	if err != nil {
-		return nil, "", annos, wrapError(err, "Failed to get users")
+		return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get users")
 	}
 
 	for _, user := range users.Rows {
 		user := user
 		userResource, err := userResource(ctx, &user)
 		if err != nil {
-			return nil, "", annos, wrapError(err, "Failed to get user resource")
+			return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get user resource")
 		}
 
 		grants, err := r.getGrantsFromPermissions(user.Permissions, resource, userResource)
 		if err != nil {
-			return nil, "", annos, wrapError(err, "Failed to get user grants")
+			return nil, &rs.SyncOpResults{Annotations: annos}, wrapError(err, "Failed to get user grants")
 		}
 
 		rv = append(rv, grants...)
 	}
 
 	if isLastPage(len(users.Rows), resourcePageSize) {
-		return rv, "", annos, nil
+		return rv, &rs.SyncOpResults{Annotations: annos}, nil
 	}
 
 	nextPage, err := handleNextPage(bag, offset+resourcePageSize)
 	if err != nil {
-		return nil, "", annos, err
+		return nil, &rs.SyncOpResults{Annotations: annos}, err
 	}
 
-	return rv, nextPage, annos, nil
+	return rv, &rs.SyncOpResults{NextPageToken: nextPage, Annotations: annos}, nil
 }
 
 func (r *roleResourceType) getGrantsFromPermissions(permissions snipeit.Permissions, roleResource *v2.Resource, resource *v2.Resource) ([]*v2.Grant, error) {
@@ -328,17 +327,17 @@ func newRoleBuilder(client *snipeit.Client) *roleResourceType {
 	}
 }
 
-func (r *roleResourceType) List(ctx context.Context, _ *v2.ResourceId, pagination *pagination.Token) ([]*v2.Resource, string, annotations.Annotations, error) {
+func (r *roleResourceType) List(ctx context.Context, _ *v2.ResourceId, pToken rs.SyncOpAttrs) ([]*v2.Resource, *rs.SyncOpResults, error) {
 	var rv []*v2.Resource
 
 	for _, role := range roles {
 		resource, err := roleResource(ctx, role)
 		if err != nil {
-			return nil, "", nil, err
+			return nil, nil, err
 		}
 
 		rv = append(rv, resource)
 	}
 
-	return rv, "", nil, nil
+	return rv, nil, nil
 }
