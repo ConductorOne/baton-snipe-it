@@ -56,7 +56,7 @@ func userResource(ctx context.Context, user *snipeit.User) (*v2.Resource, error)
 	fullName := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
 	resource, err := rs.NewUserResource(fullName, resourceTypeUser, user.ID, userTraitOptions,
 		rs.WithResourceProfile(profile),
-		rs.WithResourceStatus(v2.Status_ResourceStatus(getUserStatus(user)), ""))
+		rs.WithResourceStatus(getUserStatus(user), ""))
 	if err != nil {
 		return nil, err
 	}
@@ -64,12 +64,12 @@ func userResource(ctx context.Context, user *snipeit.User) (*v2.Resource, error)
 	return resource, nil
 }
 
-func getUserStatus(u *snipeit.User) v2.UserTrait_Status_Status {
+func getUserStatus(u *snipeit.User) v2.Status_ResourceStatus {
 	if u.Activated {
-		return v2.UserTrait_Status_STATUS_ENABLED
+		return v2.Status_RESOURCE_STATUS_ENABLED
 	}
 
-	return v2.UserTrait_Status_STATUS_DISABLED
+	return v2.Status_RESOURCE_STATUS_DISABLED
 }
 
 func (o *userResourceType) List(ctx context.Context, _ *v2.ResourceId, pt rs.SyncOpAttrs) ([]*v2.Resource, *rs.SyncOpResults, error) {
